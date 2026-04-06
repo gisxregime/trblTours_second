@@ -1,0 +1,718 @@
+<?php
+
+declare(strict_types=1);
+
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+defined('DB_HOST') || define('DB_HOST', '127.0.0.1');
+defined('DB_PORT') || define('DB_PORT', '3306');
+defined('DB_NAME') || define('DB_NAME', 'trbl_tours_db');
+defined('DB_USER') || define('DB_USER', 'root');
+defined('DB_PASS') || define('DB_PASS', '');
+
+if (! function_exists('getDB')) {
+    function getDB(): PDO
+    {
+        static $connection = null;
+
+        if ($connection instanceof PDO) {
+            return $connection;
+        }
+
+        $dsn = sprintf(
+            'mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4',
+            DB_HOST,
+            DB_PORT,
+            DB_NAME
+        );
+
+        try {
+            $connection = new PDO($dsn, DB_USER, DB_PASS, [
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                PDO::ATTR_EMULATE_PREPARES => false,
+            ]);
+
+            return $connection;
+        } catch (PDOException $exception) {
+            throw new RuntimeException('Database connection failed: '.$exception->getMessage(), 0, $exception);
+        }
+    }
+}
+
+$errors = [];
+$successMessage = '';
+
+$allowedRoles = ['tourist', 'tour_guide'];
+$allowedLanguages = [
+    'English',
+    'Tagalog',
+    'Cebuano',
+    'Ilocano',
+    'Hiligaynon',
+    'Waray',
+    'Bicolano',
+    'Kapampangan',
+    'Pangasinan',
+];
+
+$requestedRole = isset($_GET['role']) && in_array((string) $_GET['role'], $allowedRoles, true)
+    ? (string) $_GET['role']
+    : 'tourist';
+
+$formData = [
+    'account_type' => $requestedRole,
+    'full_name' => '',
+    'email' => '',
+    'phone_number' => '',
+    'nationality' => '',
+    'preferred_language' => 'English',
+    'years_of_experience' => '',
+    'license_number' => '',
+    'bio' => '',
+];
+
+$requestMethod = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+
+if ($requestMethod === 'POST') {
+    $formData['account_type'] = in_array($_POST['account_type'] ?? 'tourist', $allowedRoles, true)
+        ? (string) $_POST['account_type']
+        : 'tourist';
+
+    $formData['full_name'] = trim((string) ($_POST['full_name'] ?? ''));
+    $formData['email'] = trim((string) ($_POST['email'] ?? ''));
+    $password = (string) ($_POST['password'] ?? '');
+    $passwordConfirmation = (string) ($_POST['password_confirmation'] ?? '');
+
+    if ($formData['full_name'] === '') {
+        $errors[] = 'Full Name is required.';
+    }
+
+    if ($formData['email'] === '' || filter_var($formData['email'], FILTER_VALIDATE_EMAIL) === false) {
+        $errors[] = 'A valid Email is required.';
+    }
+
+    if ($password === '') {
+        $errors[] = 'Password is required.';
+    }
+
+    if ($password !== $passwordConfirmation) {
+        $errors[] = 'Password confirmation does not match.';
+    }
+
+    if ($formData['account_type'] === 'tourist') {
+        $formData['phone_number'] = trim((string) ($_POST['phone_number'] ?? ''));
+        $formData['nationality'] = trim((string) ($_POST['nationality'] ?? ''));
+        $formData['preferred_language'] = trim((string) ($_POST['preferred_language'] ?? 'English'));
+
+        if ($formData['phone_number'] === '') {
+            $errors[] = 'Phone Number is required for tourists.';
+        }
+
+        if ($formData['nationality'] === '') {
+            $errors[] = 'Nationality is required for tourists.';
+        }
+
+        if (! in_array($formData['preferred_language'], $allowedLanguages, true)) {
+            $errors[] = 'Preferred Language is invalid.';
+        }
+    }
+
+    if ($formData['account_type'] === 'tour_guide') {
+        $formData['phone_number'] = trim((string) ($_POST['phone_number'] ?? ''));
+        $formData['years_of_experience'] = trim((string) ($_POST['years_of_experience'] ?? ''));
+        $formData['license_number'] = trim((string) ($_POST['license_number'] ?? ''));
+        $formData['bio'] = trim((string) ($_POST['bio'] ?? ''));
+
+        if ($formData['phone_number'] === '') {
+            $errors[] = 'Phone Number is required for tour guides.';
+        }
+
+        if ($formData['years_of_experience'] === '' || filter_var($formData['years_of_experience'], FILTER_VALIDATE_INT) === false) {
+            $errors[] = 'Years of Experience must be a valid number.';
+        }
+
+        if ($formData['license_number'] === '') {
+            $errors[] = 'License Number is required for tour guides.';
+        }
+
+        if ($formData['bio'] === '') {
+            $errors[] = 'Bio is required for tour guides.';
+        }
+    }
+
+    if ($errors === []) {
+        try {
+            $db = getDB();
+
+            $emailCheck = $db->prepare('SELECT id FROM users WHERE email = :email LIMIT 1');
+            $emailCheck->execute([':email' => $formData['email']]);
+
+            if ($emailCheck->fetch() !== false) {
+                $errors[] = 'This email is already registered.';
+            } else {
+                $db->beginTransaction();
+
+                $userRole = $formData['account_type'];
+                $userStatus = $userRole === 'tour_guide' ? 'pending' : 'active';
+
+                $userInsert = $db->prepare(
+                    'INSERT INTO users (email, password, role, full_name, status) VALUES (:email, :password, :role, :full_name, :status)'
+                );
+
+                $userInsert->execute([
+                    ':email' => $formData['email'],
+                    ':password' => password_hash($password, PASSWORD_DEFAULT),
+                    ':role' => $userRole,
+                    ':full_name' => $formData['full_name'],
+                    ':status' => $userStatus,
+                ]);
+
+                $userId = (int) $db->lastInsertId();
+
+                if ($userRole === 'tourist') {
+                    $touristInsert = $db->prepare(
+                        'INSERT INTO tourists_profile (user_id, phone_number, preferred_language, nationality) VALUES (:user_id, :phone_number, :preferred_language, :nationality)'
+                    );
+
+                    $touristInsert->execute([
+                        ':user_id' => $userId,
+                        ':phone_number' => $formData['phone_number'],
+                        ':preferred_language' => strtolower($formData['preferred_language']),
+                        ':nationality' => $formData['nationality'],
+                    ]);
+                }
+
+                if ($userRole === 'tour_guide') {
+                    $guideInsert = $db->prepare(
+                        'INSERT INTO tour_guides_profile (user_id, phone_number, years_of_experience, license_number, bio, approved_by_admin) VALUES (:user_id, :phone_number, :years_of_experience, :license_number, :bio, :approved_by_admin)'
+                    );
+
+                    $guideInsert->execute([
+                        ':user_id' => $userId,
+                        ':phone_number' => $formData['phone_number'],
+                        ':years_of_experience' => (int) $formData['years_of_experience'],
+                        ':license_number' => $formData['license_number'],
+                        ':bio' => $formData['bio'],
+                        ':approved_by_admin' => 0,
+                    ]);
+                }
+
+                $db->commit();
+
+                $successMessage = 'Registration successful! Tour guides need admin approval before logging in.';
+                header('Refresh: 3; URL=/login');
+            }
+        } catch (Throwable $exception) {
+            if (isset($db) && $db instanceof PDO && $db->inTransaction()) {
+                $db->rollBack();
+            }
+
+            $errors[] = 'Registration failed: '.$exception->getMessage();
+        }
+    }
+}
+
+function selected(string $a, string $b): string
+{
+    return $a === $b ? 'selected' : '';
+}
+
+function oldValue(array $data, string $key): string
+{
+    return htmlspecialchars((string) ($data[$key] ?? ''), ENT_QUOTES, 'UTF-8');
+}
+?>
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - TrblTours</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Asimovian:wght@400;700&family=Cormorant+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.bunny.net">
+    <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        .brand-font {
+            font-family: 'Asimovian', 'Instrument Sans', sans-serif;
+            letter-spacing: 0.02em;
+        }
+
+        body {
+            font-family: 'Instrument Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(rgba(166, 139, 84, 0.65), rgba(166, 139, 84, 0.65)), url('/images/signup_login_bg.jpg') center/cover no-repeat fixed;
+            color: #6f5d52;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .brand-header {
+            position: fixed;
+            top: 24px;
+            left: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 100;
+        }
+
+        .brand-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 10px;
+            object-fit: cover;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .brand-text {
+            font-size: 20px;
+            font-weight: 700;
+            color: white;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5), 0 4px 12px rgba(0, 0, 0, 0.4);
+            letter-spacing: 0.02em;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 620px;
+            background: rgba(255, 253, 248, 0.98);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            backdrop-filter: blur(10px);
+        }
+
+        .back-link {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #b96c58;
+            text-decoration: none;
+            margin-bottom: 24px;
+            transition: color 0.2s ease;
+        }
+
+        .back-link:hover {
+            color: #9f5b4b;
+        }
+
+        h1 {
+            margin-bottom: 8px;
+            font-size: 28px;
+            color: #2a2a2a;
+        }
+
+        .subtitle {
+            margin-bottom: 28px;
+            color: #87756a;
+            font-size: 14px;
+        }
+
+        .role-toggle {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 28px;
+        }
+
+        .role-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            border: 2px solid #e0d5c7;
+            border-radius: 12px;
+            padding: 16px;
+            cursor: pointer;
+            background: #f9f6f0;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            color: #6f5d52;
+        }
+
+        .role-btn:hover {
+            border-color: #d0bfb0;
+            background: #f5ede2;
+        }
+
+        .role-btn.active {
+            border-color: #b96c58;
+            background: #fff5f0;
+            color: #b96c58;
+            box-shadow: 0 4px 12px rgba(185, 108, 88, 0.15);
+        }
+
+        .role-icon {
+            font-size: 32px;
+            color: #b96c58;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 44px;
+            height: 44px;
+            background: rgba(185, 108, 88, 0.1);
+            border-radius: 8px;
+            font-style: normal;
+            font-variant: normal;
+            text-rendering: auto;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .role-icon i {
+            display: inline-block;
+            font-size: 28px;
+            line-height: 1;
+            color: #b96c58;
+            vertical-align: middle;
+        }
+
+        .alert {
+            border-radius: 12px;
+            padding: 12px 14px;
+            margin-bottom: 16px;
+            font-size: 14px;
+        }
+
+        .alert.error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+
+        .alert.error ul {
+            margin: 6px 0 0 16px;
+        }
+
+        .alert.error strong {
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .alert.success {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+
+        form {
+            display: grid;
+            gap: 16px;
+        }
+
+        .field {
+            display: grid;
+            gap: 6px;
+        }
+
+        label {
+            font-weight: 600;
+            font-size: 13px;
+            color: #5a4a42;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            border: 1px solid #e0d5c7;
+            border-radius: 8px;
+            padding: 10px 12px;
+            font-size: 14px;
+            color: #6f5d52;
+            background: #fffef9;
+            transition: border-color 0.2s ease;
+            font-family: inherit;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #b96c58;
+            box-shadow: 0 0 0 3px rgba(185, 108, 88, 0.1);
+        }
+
+        input::placeholder {
+            color: #b8a89c;
+        }
+
+        textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        .grid-2 {
+            display: grid;
+            gap: 16px;
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .submit-btn {
+            margin-top: 12px;
+            border: none;
+            border-radius: 10px;
+            padding: 12px 16px;
+            background: #b96c58;
+            color: white;
+            font-weight: 700;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .submit-btn:hover {
+            background: #9f5b4b;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(185, 108, 88, 0.25);
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+
+        .muted {
+            color: #87756a;
+            font-size: 12px;
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 12px 0;
+            color: #b8a89c;
+            font-size: 12px;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #e0d5c7;
+        }
+
+        @media (max-width: 700px) {
+            .container {
+                padding: 28px 20px;
+                max-width: 100%;
+            }
+
+            h1 {
+                font-size: 22px;
+            }
+
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+
+            .brand-header {
+                top: 12px;
+                left: 12px;
+            }
+
+            .brand-icon {
+                width: 36px;
+                height: 36px;
+                font-size: 18px;
+            }
+
+            .brand-text {
+                font-size: 16px;
+            }
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+<div class="brand-header">
+    <img src="/images/tribaltours_icon.png" alt="TrblTours" class="brand-icon">
+    <div class="brand-text brand-font">TrblTours</div>
+</div>
+
+<div class="container">
+    <a class="back-link" href="/">← Back to Home</a>
+    <h1>Create Your Account</h1>
+    <p class="subtitle">Choose your account type, fill in your details, and continue.</p>
+
+    <?php if ($errors !== []) { ?>
+        <div class="alert error">
+            <strong>Please fix the following:</strong>
+            <ul>
+                <?php foreach ($errors as $error) { ?>
+                    <li><?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?></li>
+                <?php } ?>
+            </ul>
+        </div>
+    <?php } ?>
+
+    <?php if ($successMessage !== '') { ?>
+        <div class="alert success">
+            <?= htmlspecialchars($successMessage, ENT_QUOTES, 'UTF-8') ?><br>
+            Redirecting to login page in 3 seconds...
+        </div>
+    <?php } ?>
+
+    <div class="role-toggle">
+        <button type="button" class="role-btn" id="touristTab">
+            <span class="role-icon"><i class="fas fa-camera"></i></span>
+            <span>Sign up as Tourist</span>
+        </button>
+        <button type="button" class="role-btn" id="guideTab">
+            <span class="role-icon"><i class="fas fa-map"></i></span>
+            <span>Tour Guide</span>
+        </button>
+    </div>
+
+    <form method="POST" action="">
+        <input type="hidden" name="account_type" id="account_type" value="<?= oldValue($formData, 'account_type') ?>">
+
+        <div class="grid-2">
+            <div class="field">
+                <label for="full_name">Full Name</label>
+                <input type="text" id="full_name" name="full_name" placeholder="John Doe" value="<?= oldValue($formData, 'full_name') ?>" required>
+            </div>
+
+            <div class="field">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" placeholder="john@example.com" value="<?= oldValue($formData, 'email') ?>" required>
+            </div>
+        </div>
+
+        <div class="grid-2">
+            <div class="field">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" placeholder="••••••••" required>
+            </div>
+
+            <div class="field">
+                <label for="password_confirmation">Confirm Password</label>
+                <input type="password" id="password_confirmation" name="password_confirmation" placeholder="••••••••" required>
+            </div>
+        </div>
+
+        <div id="touristFields">
+            <div class="grid-2">
+                <div class="field">
+                    <label for="tourist_phone_number">Phone Number</label>
+                    <input type="text" id="tourist_phone_number" name="phone_number" placeholder="+63 999-999-9999" value="<?= oldValue($formData, 'phone_number') ?>">
+                </div>
+
+                <div class="field">
+                    <label for="nationality">Nationality</label>
+                    <input type="text" id="nationality" name="nationality" placeholder="e.g., Filipino" value="<?= oldValue($formData, 'nationality') ?>">
+                </div>
+            </div>
+        </div>
+
+        <div id="guideFields" class="hidden">
+            <div class="grid-2">
+                <div class="field">
+                    <label for="guide_phone_number">Phone Number</label>
+                    <input type="text" id="guide_phone_number" name="phone_number" placeholder="+63 999-999-9999" value="<?= oldValue($formData, 'phone_number') ?>">
+                </div>
+
+                <div class="field">
+                    <label for="years_of_experience">Years of Experience</label>
+                    <input type="number" min="0" id="years_of_experience" name="years_of_experience" placeholder="e.g., 5" value="<?= oldValue($formData, 'years_of_experience') ?>">
+                </div>
+            </div>
+
+            <div class="field">
+                <label for="license_number">License Number</label>
+                <input type="text" id="license_number" name="license_number" placeholder="e.g., LN-12345" value="<?= oldValue($formData, 'license_number') ?>">
+            </div>
+
+            <div class="field">
+                <label for="bio">Bio</label>
+                <textarea id="bio" name="bio" placeholder="Tell us about your experience as a tour guide..."></textarea>
+            </div>
+
+            <p class="muted">✓ Tour guides are created with pending status and need admin approval before login.</p>
+        </div>
+
+        <button type="submit" class="submit-btn">Register</button>
+    </form>
+</div>
+
+<script>
+    const touristTab = document.getElementById('touristTab');
+    const guideTab = document.getElementById('guideTab');
+    const accountTypeInput = document.getElementById('account_type');
+    const touristFields = document.getElementById('touristFields');
+    const guideFields = document.getElementById('guideFields');
+
+    const touristOnlyInputs = [
+        document.getElementById('tourist_phone_number'),
+        document.getElementById('nationality'),
+        document.getElementById('preferred_language')
+    ];
+
+    const guideOnlyInputs = [
+        document.getElementById('guide_phone_number'),
+        document.getElementById('years_of_experience'),
+        document.getElementById('license_number'),
+        document.getElementById('bio')
+    ];
+
+    function toggleRole(role) {
+        accountTypeInput.value = role;
+
+        if (role === 'tourist') {
+            touristTab.classList.add('active');
+            guideTab.classList.remove('active');
+            touristFields.classList.remove('hidden');
+            guideFields.classList.add('hidden');
+
+            touristOnlyInputs.forEach((input) => {
+                input.disabled = false;
+            });
+
+            guideOnlyInputs.forEach((input) => {
+                input.disabled = true;
+            });
+        } else {
+            guideTab.classList.add('active');
+            touristTab.classList.remove('active');
+            guideFields.classList.remove('hidden');
+            touristFields.classList.add('hidden');
+
+            guideOnlyInputs.forEach((input) => {
+                input.disabled = false;
+            });
+
+            touristOnlyInputs.forEach((input) => {
+                input.disabled = true;
+            });
+        }
+    }
+
+    touristTab.addEventListener('click', () => toggleRole('tourist'));
+    guideTab.addEventListener('click', () => toggleRole('tour_guide'));
+
+    toggleRole(accountTypeInput.value === 'tour_guide' ? 'tour_guide' : 'tourist');
+</script>
+</body>
+</html>
