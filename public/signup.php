@@ -237,6 +237,10 @@ if ($requestMethod === 'POST') {
             $errors[] = 'NBI Clearance upload is required.';
         }
 
+        if (! isset($_FILES['barangay_clearance_file']) || (int) $_FILES['barangay_clearance_file']['error'] !== UPLOAD_ERR_OK) {
+            $errors[] = 'Barangay Clearance upload is required.';
+        }
+
         if (! $formData['identity_consent']) {
             $errors[] = 'You must consent to identity verification.';
         }
@@ -253,6 +257,7 @@ if ($requestMethod === 'POST') {
     if ($errors === []) {
         try {
             $db = getDB();
+            $verifiedTimestamp = date('Y-m-d H:i:s');
 
             $emailCheck = $db->prepare('SELECT id FROM users WHERE email = :email LIMIT 1');
             $emailCheck->execute([':email' => $formData['email']]);
@@ -263,25 +268,33 @@ if ($requestMethod === 'POST') {
                 $db->beginTransaction();
 
                 $userRole = $formData['account_type'];
-                $userStatus = $userRole === 'tour_guide' ? 'pending' : 'active';
+                $storedRole = $userRole;
+                $userStatus = $storedRole === 'tour_guide' ? 'pending' : 'active';
 
                 $userInsert = $db->prepare(
-                    'INSERT INTO users (email, password, role, full_name, status) VALUES (:email, :password, :role, :full_name, :status)'
+                    'INSERT INTO users (name, full_name, email, email_verified_at, phone_verified_at, password, role, status) VALUES (:name, :full_name, :email, :email_verified_at, :phone_verified_at, :password, :role, :status)'
                 );
 
                 $userInsert->execute([
-                    ':email' => $formData['email'],
-                    ':password' => password_hash($password, PASSWORD_DEFAULT),
-                    ':role' => $userRole,
+                    ':name' => $formData['full_name'],
                     ':full_name' => $formData['full_name'],
+                    ':email' => $formData['email'],
+                    ':email_verified_at' => $formData['email_verified'] ? $verifiedTimestamp : null,
+                    ':phone_verified_at' => $formData['phone_verified'] ? $verifiedTimestamp : null,
+                    ':password' => password_hash($password, PASSWORD_DEFAULT),
+                    ':role' => $storedRole,
                     ':status' => $userStatus,
                 ]);
 
                 $userId = (int) $db->lastInsertId();
 
                 if ($userRole === 'tourist') {
+                    $documentDirectory = 'signup-documents/tourists/'.$userId;
+                    $touristIdFrontPath = storeUploadedSignupFile('tourist_id_front_file', $documentDirectory);
+                    $touristIdBackPath = storeUploadedSignupFile('tourist_id_back_file', $documentDirectory);
+
                     $touristInsert = $db->prepare(
-                        'INSERT INTO tourists_profile (user_id, phone_number, nationality, date_of_birth, government_id_type, government_id_number, id_front_verified, id_back_verified, selfie_verified) VALUES (:user_id, :phone_number, :nationality, :date_of_birth, :government_id_type, :government_id_number, :id_front_verified, :id_back_verified, :selfie_verified)'
+                        'INSERT INTO tourists_profile (user_id, phone_number, nationality, date_of_birth, tourist_id_type, tourist_id_number, id_front_path, id_back_path, selfie_path, id_front_verified, id_back_verified, selfie_verified, terms_agreed, identity_consent, pending_understood) VALUES (:user_id, :phone_number, :nationality, :date_of_birth, :tourist_id_type, :tourist_id_number, :id_front_path, :id_back_path, :selfie_path, :id_front_verified, :id_back_verified, :selfie_verified, :terms_agreed, :identity_consent, :pending_understood)'
                     );
 
                     $touristInsert->execute([
@@ -289,31 +302,44 @@ if ($requestMethod === 'POST') {
                         ':phone_number' => $formData['phone_number'],
                         ':nationality' => $formData['nationality'],
                         ':date_of_birth' => $formData['date_of_birth'],
-                        ':government_id_type' => $formData['tourist_id_type'],
-                        ':government_id_number' => $formData['tourist_id_number'],
+                        ':tourist_id_type' => $formData['tourist_id_type'],
+                        ':tourist_id_number' => $formData['tourist_id_number'],
+                        ':id_front_path' => $touristIdFrontPath,
+                        ':id_back_path' => $touristIdBackPath,
+                        ':selfie_path' => null,
                         ':id_front_verified' => 0,
                         ':id_back_verified' => 0,
                         ':selfie_verified' => 0,
+                        ':terms_agreed' => $formData['terms_agreed'] ? 1 : 0,
+                        ':identity_consent' => $formData['identity_consent'] ? 1 : 0,
+                        ':pending_understood' => $formData['pending_understood'] ? 1 : 0,
                     ]);
                 }
 
                 if ($userRole === 'tour_guide') {
                     $documentDirectory = 'signup-documents/tour-guides/'.$userId;
+                    $idFrontPath = storeUploadedSignupFile('id_front_file', $documentDirectory);
+                    $idBackPath = storeUploadedSignupFile('id_back_file', $documentDirectory);
+                    $selfiePath = storeUploadedSignupFile('selfie_file', $documentDirectory);
                     $nbiClearancePath = storeUploadedSignupFile('nbi_clearance_file', $documentDirectory);
                     $barangayClearancePath = storeUploadedSignupFile('barangay_clearance_file', $documentDirectory);
 
                     $guideInsert = $db->prepare(
-                        'INSERT INTO tour_guides_profile (user_id, phone_number, years_of_experience, bio, date_of_birth, government_id_type, government_id_number, tour_guide_cert_number, nbi_clearance_number, nbi_clearance_path, barangay_clearance_number, barangay_clearance_path, nbi_clearance_validated, id_front_verified, id_back_verified, selfie_verified, approved_by_admin) VALUES (:user_id, :phone_number, :years_of_experience, :bio, :date_of_birth, :government_id_type, :government_id_number, :tour_guide_cert_number, :nbi_clearance_number, :nbi_clearance_path, :barangay_clearance_number, :barangay_clearance_path, :nbi_clearance_validated, :id_front_verified, :id_back_verified, :selfie_verified, :approved_by_admin)'
+                        'INSERT INTO tour_guides_profile (user_id, phone_number, nationality, date_of_birth, years_of_experience, bio, government_id_type, government_id_number, id_front_path, id_back_path, selfie_path, tour_guide_cert_number, nbi_clearance_number, nbi_clearance_path, barangay_clearance_number, barangay_clearance_path, nbi_clearance_validated, id_front_verified, id_back_verified, selfie_verified, approved_by_admin, terms_agreed, identity_consent, pending_understood) VALUES (:user_id, :phone_number, :nationality, :date_of_birth, :years_of_experience, :bio, :government_id_type, :government_id_number, :id_front_path, :id_back_path, :selfie_path, :tour_guide_cert_number, :nbi_clearance_number, :nbi_clearance_path, :barangay_clearance_number, :barangay_clearance_path, :nbi_clearance_validated, :id_front_verified, :id_back_verified, :selfie_verified, :approved_by_admin, :terms_agreed, :identity_consent, :pending_understood)'
                     );
 
                     $guideInsert->execute([
                         ':user_id' => $userId,
                         ':phone_number' => $formData['phone_number'],
+                        ':nationality' => $formData['nationality'],
                         ':years_of_experience' => (int) $formData['years_of_experience'],
                         ':bio' => $formData['bio'],
                         ':date_of_birth' => $formData['date_of_birth'],
                         ':government_id_type' => $formData['government_id_type'],
                         ':government_id_number' => $formData['government_id_number'],
+                        ':id_front_path' => $idFrontPath,
+                        ':id_back_path' => $idBackPath,
+                        ':selfie_path' => $selfiePath,
                         ':tour_guide_cert_number' => $formData['tour_guide_cert_number'],
                         ':nbi_clearance_number' => $formData['nbi_clearance_number'],
                         ':nbi_clearance_path' => $nbiClearancePath,
@@ -324,6 +350,9 @@ if ($requestMethod === 'POST') {
                         ':id_back_verified' => 0,
                         ':selfie_verified' => 0,
                         ':approved_by_admin' => 0,
+                        ':terms_agreed' => $formData['terms_agreed'] ? 1 : 0,
+                        ':identity_consent' => $formData['identity_consent'] ? 1 : 0,
+                        ':pending_understood' => $formData['pending_understood'] ? 1 : 0,
                     ]);
                 }
 
@@ -779,6 +808,8 @@ function storeUploadedSignupFile(string $fieldName, string $directory): ?string
             display: flex;
             align-items: center;
             justify-content: center;
+            position: relative;
+            overflow: hidden;
         }
 
         .file-upload-wrapper:hover {
@@ -797,6 +828,8 @@ function storeUploadedSignupFile(string $fieldName, string $directory): ?string
             gap: 8px;
             cursor: pointer;
             color: #6f5d52;
+            width: 100%;
+            z-index: 2;
         }
 
         .file-upload-label i {
@@ -804,11 +837,46 @@ function storeUploadedSignupFile(string $fieldName, string $directory): ?string
             color: #8B4513;
         }
 
-        .file-preview-grid {
+        .file-upload-wrapper.has-preview {
+            padding: 0;
+            min-height: 116px;
+            border-style: solid;
+        }
+
+        .file-upload-wrapper.has-preview .file-upload-label > i,
+        .file-upload-wrapper.has-preview .file-upload-label > span {
+            display: none;
+        }
+
+        .upload-inline-preview {
+            width: 100%;
+            height: 116px;
+            object-fit: cover;
+            display: block;
+            border-radius: 6px;
+        }
+
+        .upload-inline-file {
+            min-height: 116px;
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
-            gap: 12px;
-            margin-top: 12px;
+            place-items: center;
+            gap: 8px;
+            color: #6f5d52;
+            padding: 12px;
+        }
+
+        .upload-inline-file i {
+            font-size: 24px;
+            color: #8B4513;
+        }
+
+        .upload-inline-file span {
+            font-size: 12px;
+            word-break: break-word;
+        }
+
+        .file-preview-grid {
+              display: none;
         }
 
         .file-preview {
@@ -1258,7 +1326,7 @@ function storeUploadedSignupFile(string $fieldName, string $directory): ?string
 
     <div class="role-toggle">
         <button type="button" class="role-btn" id="touristTab">
-            <span class="role-icon"><i class="fas fa-camera"></i></span>
+            <span class="role-icon"><i class="fas fa-user"></i></span>
             <span>Tourist</span>
         </button>
         <button type="button" class="role-btn" id="guideTab">
@@ -1380,7 +1448,7 @@ function storeUploadedSignupFile(string $fieldName, string $directory): ?string
 
             <div class="field">
                 <label class="required">Upload Your Valid ID (Front)</label>
-                <div class="file-upload-wrapper" onclick="document.getElementById('tourist_id_front_file').click()">
+                <div class="file-upload-wrapper">
                     <label for="tourist_id_front_file" class="file-upload-label">
                         <i class="fas fa-image"></i>
                         <span>Click to upload</span>
@@ -1393,7 +1461,7 @@ function storeUploadedSignupFile(string $fieldName, string $directory): ?string
 
             <div class="field">
                 <label class="required">Upload Your Valid ID (Back)</label>
-                <div class="file-upload-wrapper" onclick="document.getElementById('tourist_id_back_file').click()">
+                <div class="file-upload-wrapper">
                     <label for="tourist_id_back_file" class="file-upload-label">
                         <i class="fas fa-image"></i>
                         <span>Click to upload</span>
@@ -1410,8 +1478,6 @@ function storeUploadedSignupFile(string $fieldName, string $directory): ?string
         <!-- Tour Guide Section -->
         <div id="tourGuideSection" class="hidden">
             <div class="form-section-title">Tour Guide Credentials</div>
-
-            <div class="form-section-title">Identity Verification</div>
 
             <div class="grid-2">
                 <div class="field">
@@ -1432,7 +1498,7 @@ function storeUploadedSignupFile(string $fieldName, string $directory): ?string
 
             <div class="field">
                 <label class="required">Upload Government ID (Front)</label>
-                <div class="file-upload-wrapper" onclick="document.getElementById('id_front_file').click()">
+                <div class="file-upload-wrapper">
                     <label for="id_front_file" class="file-upload-label">
                         <i class="fas fa-image"></i>
                         <span>Click to upload</span>
@@ -1445,7 +1511,7 @@ function storeUploadedSignupFile(string $fieldName, string $directory): ?string
 
             <div class="field">
                 <label class="required">Upload Government ID (Back)</label>
-                <div class="file-upload-wrapper" onclick="document.getElementById('id_back_file').click()">
+                <div class="file-upload-wrapper">
                     <label for="id_back_file" class="file-upload-label">
                         <i class="fas fa-image"></i>
                         <span>Click to upload</span>
@@ -1458,7 +1524,7 @@ function storeUploadedSignupFile(string $fieldName, string $directory): ?string
 
             <div class="field">
                 <label class="required">Upload Selfie Holding Your ID</label>
-                <div class="file-upload-wrapper" onclick="document.getElementById('selfie_file').click()">
+                <div class="file-upload-wrapper">
                     <label for="selfie_file" class="file-upload-label">
                         <i class="fas fa-user"></i>
                         <span>Click to upload or take a photo</span>
@@ -1564,7 +1630,7 @@ function storeUploadedSignupFile(string $fieldName, string $directory): ?string
 
             <div class="field">
                 <label class="required">Upload NBI Clearance</label>
-                <div class="file-upload-wrapper" onclick="document.getElementById('nbi_clearance_file').click()">
+                <div class="file-upload-wrapper">
                     <label for="nbi_clearance_file" class="file-upload-label">
                         <i class="fas fa-file-upload"></i>
                         <span>Tap to upload your NBI Clearance</span>
@@ -1577,7 +1643,7 @@ function storeUploadedSignupFile(string $fieldName, string $directory): ?string
 
             <div class="field">
                 <label>Upload Barangay Clearance (Optional)</label>
-                <div class="file-upload-wrapper" onclick="document.getElementById('barangay_clearance_file').click()">
+                <div class="file-upload-wrapper">
                     <label for="barangay_clearance_file" class="file-upload-label">
                         <i class="fas fa-file-contract"></i>
                         <span>Tap to upload Barangay Clearance</span>
@@ -1732,47 +1798,62 @@ function storeUploadedSignupFile(string $fieldName, string $directory): ?string
     function setupFileUploadPreview(inputId, previewContainerId) {
         const input = document.getElementById(inputId);
         const previewContainer = document.getElementById(previewContainerId);
+        const uploadWrapper = input.closest('.file-upload-wrapper');
+        const uploadLabel = uploadWrapper ? uploadWrapper.querySelector('.file-upload-label') : null;
+
+        function resetInlinePreview() {
+            if (!uploadWrapper || !uploadLabel) {
+                return;
+            }
+
+            uploadWrapper.classList.remove('has-preview');
+            const inlinePreview = uploadLabel.querySelector('.upload-inline-preview');
+
+            if (inlinePreview) {
+                inlinePreview.remove();
+            }
+
+            const inlineFile = uploadLabel.querySelector('.upload-inline-file');
+
+            if (inlineFile) {
+                inlineFile.remove();
+            }
+        }
 
         input.addEventListener('change', (e) => {
             previewContainer.innerHTML = '';
+            resetInlinePreview();
             const file = e.target.files[0];
 
             if (file && file.type.startsWith('image/')) {
                 const reader = new FileReader();
                 reader.onload = (event) => {
-                    const img = document.createElement('img');
-                    img.src = event.target.result;
-                    const preview = document.createElement('div');
-                    preview.className = 'file-preview';
-                    preview.appendChild(img);
-                    previewContainer.appendChild(preview);
+                    if (uploadWrapper && uploadLabel) {
+                        const inlineImage = document.createElement('img');
+                        inlineImage.className = 'upload-inline-preview';
+                        inlineImage.src = event.target.result;
+                        inlineImage.alt = 'Selected file preview';
+                        uploadLabel.appendChild(inlineImage);
+                        uploadWrapper.classList.add('has-preview');
+                    }
                 };
                 reader.readAsDataURL(file);
             } else if (file) {
-                const preview = document.createElement('div');
-                preview.className = 'file-preview';
-                const fileLayout = document.createElement('div');
-                fileLayout.style.display = 'grid';
-                fileLayout.style.placeItems = 'center';
-                fileLayout.style.gap = '6px';
-                fileLayout.style.minHeight = '80px';
-                fileLayout.style.textAlign = 'center';
+                if (uploadWrapper && uploadLabel) {
+                    const inlineFile = document.createElement('div');
+                    inlineFile.className = 'upload-inline-file';
 
-                const icon = document.createElement('i');
-                icon.className = 'fas fa-file-lines';
-                icon.style.fontSize = '22px';
-                icon.style.color = '#8B4513';
+                    const inlineIcon = document.createElement('i');
+                    inlineIcon.className = 'fas fa-file-lines';
 
-                const fileName = document.createElement('span');
-                fileName.style.fontSize = '12px';
-                fileName.style.color = '#6f5d52';
-                fileName.style.wordBreak = 'break-word';
-                fileName.textContent = file.name;
+                    const inlineName = document.createElement('span');
+                    inlineName.textContent = file.name;
 
-                fileLayout.appendChild(icon);
-                fileLayout.appendChild(fileName);
-                preview.appendChild(fileLayout);
-                previewContainer.appendChild(preview);
+                    inlineFile.appendChild(inlineIcon);
+                    inlineFile.appendChild(inlineName);
+                    uploadLabel.appendChild(inlineFile);
+                    uploadWrapper.classList.add('has-preview');
+                }
             }
             updateSubmitButtonState();
         });

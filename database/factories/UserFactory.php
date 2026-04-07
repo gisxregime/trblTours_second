@@ -24,10 +24,14 @@ class UserFactory extends Factory
      */
     public function definition(): array
     {
+        $fullName = fake()->name();
+
         return [
-            'name' => fake()->name(),
+            'name' => $fullName,
+            'full_name' => $fullName,
             'email' => fake()->unique()->safeEmail(),
             'role' => 'tourist',
+            'status' => 'active',
             'region' => null,
             'specialty' => null,
             'bio' => null,
@@ -55,6 +59,7 @@ class UserFactory extends Factory
 
         return $this->state(fn () => [
             'role' => 'guide',
+            'status' => 'active',
             'region' => fake()->randomElement($regions),
             'specialty' => fake()->randomElement($specialties),
             'bio' => fake()->sentence(18),
