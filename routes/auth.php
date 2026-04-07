@@ -57,3 +57,11 @@ Route::middleware('auth')->group(function () {
     Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
         ->name('logout');
 });
+
+Route::middleware('throttle:6,1')->group(function () {
+    Route::get('portal/system-access', [AuthenticatedSessionController::class, 'createAdmin'])
+        ->name('admin.login');
+
+    Route::post('portal/system-access', [AuthenticatedSessionController::class, 'storeAdmin'])
+        ->name('admin.login.store');
+});

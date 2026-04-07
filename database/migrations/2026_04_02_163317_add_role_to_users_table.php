@@ -11,8 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (! Schema::hasTable('users') || Schema::hasColumn('users', 'role')) {
+            return;
+        }
+
         Schema::table('users', function (Blueprint $table) {
-            $table->enum('role', ['tourist', 'guide', 'admin'])->default('tourist')->after('email');
+            $table->enum('role', ['tourist', 'guide', 'tour_guide', 'admin'])->default('tourist')->after('email');
         });
     }
 
@@ -21,6 +25,10 @@ return new class extends Migration
      */
     public function down(): void
     {
+        if (! Schema::hasTable('users') || ! Schema::hasColumn('users', 'role')) {
+            return;
+        }
+
         Schema::table('users', function (Blueprint $table) {
             $table->dropColumn('role');
         });

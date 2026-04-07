@@ -19,7 +19,21 @@ class CheckRole
             abort(401);
         }
 
-        if (!in_array($request->user()->role, $roles, true)) {
+        $allowedRoles = [];
+
+        foreach ($roles as $role) {
+            $allowedRoles[] = $role;
+
+            if ($role === 'guide') {
+                $allowedRoles[] = 'tour_guide';
+            }
+
+            if ($role === 'tour_guide') {
+                $allowedRoles[] = 'guide';
+            }
+        }
+
+        if (! in_array($request->user()->role, array_unique($allowedRoles), true)) {
             abort(403);
         }
 

@@ -258,7 +258,7 @@
             display: grid;
             justify-items: start;
             text-align: left;
-            gap: 12px;
+            gap: 46px;
             width: 100%;
             max-width: 520px;
             margin: 0 auto;
@@ -266,13 +266,13 @@
 
         .hero-kicker {
             display: inline-flex;
-            padding: 8px 14px;
+            padding: 4px 10px;
             border-radius: 999px;
             background: rgba(255, 248, 235, 0.18);
             border: 1px solid rgba(255, 255, 255, 0.4);
             font-weight: 700;
             color: #fff8eb;
-            margin-bottom: 10px;
+            margin-bottom: 6px;
             font-size: 12px;
             text-transform: uppercase;
             letter-spacing: 0.06em;
@@ -282,7 +282,7 @@
             color: #fff8eb;
             font-size: clamp(34px, 5.6vw, 56px);
             line-height: 1.08;
-            margin-bottom: 10px;
+            margin-bottom: 4px;
             text-shadow: 0 10px 24px rgba(43, 30, 22, 0.55);
             max-width: 14ch;
         }
@@ -291,7 +291,7 @@
             max-width: 60ch;
             color: #fff7e8;
             font-size: clamp(13px, 1.6vw, 15px);
-            line-height: 1.55;
+            line-height: 1.00;
             font-weight: 600;
             text-shadow: 0 2px 8px rgba(43, 30, 22, 0.4);
         }
@@ -322,15 +322,15 @@
             border: 1px solid rgba(255, 255, 255, 0.3);
             box-shadow: 0 10px 24px rgba(43, 30, 22, 0.28);
             backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(50px);
             opacity: 0;
             transform: translateX(20px) scale(0.97);
-            transition: opacity 0.55s ease, transform 0.55s ease;
+            transition: opacity 1.10s ease, transform 0.55s ease;
             pointer-events: none;
         }
 
         .favorite-card.active {
-            opacity: 1;
+            opacity: 2;
             transform: translateX(0) scale(1);
             pointer-events: auto;
         }
@@ -378,10 +378,10 @@
         }
 
         .hero-search {
-            margin-top: 2px;
+            margin-top: 30px;
             background: rgba(243, 241, 238, 0.98);
             border-radius: 20px;
-            padding: 20px;
+            padding: 30px;
             border: 1px solid rgba(255, 255, 255, 0.55);
             box-shadow: 0 16px 34px rgba(43, 30, 22, 0.28);
         }
@@ -389,7 +389,7 @@
         .hero-search-grid {
             display: grid;
             grid-template-columns: 2fr 1fr 1fr 1fr auto;
-            gap: 14px;
+            gap: 16px;
         }
 
         .search-field {
@@ -448,6 +448,7 @@
         .section-head h2 {
             color: var(--brown-900);
             font-size: clamp(28px, 4.5vw, 42px);
+            margin-top: 80px;
             margin-bottom: 10px;
         }
 
@@ -821,11 +822,11 @@
 
             .hero-grid,
             .tips-grid {
-                grid-template-columns: 1fr;
+                grid-template-columns: 2fr;
             }
 
             .hero-search-grid {
-                grid-template-columns: 1fr 1fr;
+                grid-template-columns: 2fr 2fr;
             }
 
             .search-action {

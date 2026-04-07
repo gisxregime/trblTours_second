@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 
 class DatabaseSeeder extends Seeder
 {
@@ -20,6 +21,7 @@ class DatabaseSeeder extends Seeder
             'email' => 'test@example.com',
         ], [
             'name' => 'Test User',
+            'full_name' => 'Test User',
             'role' => 'tourist',
             'region' => null,
             'specialty' => null,
@@ -31,7 +33,8 @@ class DatabaseSeeder extends Seeder
             'email' => 'mara@example.com',
         ], [
             'name' => 'Mara Santos',
-            'role' => 'guide',
+            'full_name' => 'Mara Santos',
+            'role' => 'tour_guide',
             'region' => 'National Capital Region',
             'specialty' => 'Heritage walks',
             'bio' => 'Mara curates history-first city walks for travelers who want context, food stops, and architectural stories.',
@@ -42,7 +45,8 @@ class DatabaseSeeder extends Seeder
             'email' => 'jasper@example.com',
         ], [
             'name' => 'Jasper Dela Cruz',
-            'role' => 'guide',
+            'full_name' => 'Jasper Dela Cruz',
+            'role' => 'tour_guide',
             'region' => 'Central Visayas',
             'specialty' => 'Island hopping',
             'bio' => 'Jasper specializes in island routes, snorkeling stops, and small-group coastal itineraries.',
@@ -53,13 +57,30 @@ class DatabaseSeeder extends Seeder
             'email' => 'leah@example.com',
         ], [
             'name' => 'Leah Mercado',
-            'role' => 'guide',
+            'full_name' => 'Leah Mercado',
+            'role' => 'tour_guide',
             'region' => 'Davao Region',
             'specialty' => 'Mountain treks',
             'bio' => 'Leah leads guided treks with practical trail advice, local safety knowledge, and summit pacing for mixed skill levels.',
             'password' => Hash::make('password'),
         ]);
 
-        $this->call(TourSeeder::class);
+        User::query()->updateOrCreate([
+            'email' => 'admin@tribaltours.test',
+        ], [
+            'name' => 'System Admin',
+            'full_name' => 'System Admin',
+            'role' => 'admin',
+            'status' => 'active',
+            'region' => null,
+            'specialty' => null,
+            'bio' => null,
+            'email_verified_at' => now(),
+            'password' => Hash::make('admin12345'),
+        ]);
+
+        if (Schema::hasTable('tours') && Schema::hasColumn('tours', 'title')) {
+            $this->call(TourSeeder::class);
+        }
     }
 }

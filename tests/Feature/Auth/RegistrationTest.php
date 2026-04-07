@@ -1,6 +1,7 @@
 <?php
 
 use function Pest\Laravel\assertAuthenticated;
+use function Pest\Laravel\assertDatabaseHas;
 use function Pest\Laravel\get;
 use function Pest\Laravel\post;
 
@@ -19,5 +20,12 @@ test('new users can register', function () {
     ]);
 
     assertAuthenticated();
+    assertDatabaseHas('users', [
+        'email' => 'test@example.com',
+        'name' => 'Test User',
+        'full_name' => 'Test User',
+        'role' => 'tourist',
+        'status' => 'active',
+    ]);
     $response->assertRedirect(route('dashboard.tourist', absolute: false));
 });

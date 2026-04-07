@@ -10,47 +10,76 @@
             <section class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <article class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
                     <p class="text-xs uppercase tracking-wide text-slate-500">Total Users</p>
-                    <p class="mt-2 text-3xl font-bold text-slate-900">1,284</p>
+                    <p class="mt-2 text-3xl font-bold text-slate-900">{{ number_format($stats['total_users']) }}</p>
                 </article>
                 <article class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
                     <p class="text-xs uppercase tracking-wide text-slate-500">Active Guides</p>
-                    <p class="mt-2 text-3xl font-bold text-slate-900">42</p>
+                    <p class="mt-2 text-3xl font-bold text-slate-900">{{ number_format($stats['active_guides']) }}</p>
                 </article>
                 <article class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-                    <p class="text-xs uppercase tracking-wide text-slate-500">Open Tickets</p>
-                    <p class="mt-2 text-3xl font-bold text-slate-900">7</p>
+                    <p class="text-xs uppercase tracking-wide text-slate-500">Pending Guide Approvals</p>
+                    <p class="mt-2 text-3xl font-bold text-slate-900">{{ number_format($stats['pending_guide_approvals']) }}</p>
                 </article>
                 <article class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-                    <p class="text-xs uppercase tracking-wide text-slate-500">Monthly Revenue</p>
-                    <p class="mt-2 text-3xl font-bold text-slate-900">$84,300</p>
+                    <p class="text-xs uppercase tracking-wide text-slate-500">Featured Tours</p>
+                    <p class="mt-2 text-3xl font-bold text-slate-900">{{ number_format($stats['featured_tours']) }}</p>
                 </article>
             </section>
 
             <section class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-                <h3 class="text-lg font-semibold text-slate-900">Recent Platform Activity</h3>
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <h3 class="text-lg font-semibold text-slate-900">Admin Feature Center</h3>
+                    <span class="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">Ready</span>
+                </div>
+                <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                    <article class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                        <h4 class="text-sm font-semibold text-slate-900">User Monitoring</h4>
+                        <p class="mt-1 text-sm text-slate-600">Track account growth and role distribution from live records.</p>
+                    </article>
+                    <article class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                        <h4 class="text-sm font-semibold text-slate-900">Guide Approval Queue</h4>
+                        <p class="mt-1 text-sm text-slate-600">See pending guide approvals and prioritize compliance checks.</p>
+                    </article>
+                    <article class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                        <h4 class="text-sm font-semibold text-slate-900">Tour Oversight</h4>
+                        <p class="mt-1 text-sm text-slate-600">Monitor featured tours count to keep homepage highlights fresh.</p>
+                    </article>
+                    <article class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                        <h4 class="text-sm font-semibold text-slate-900">Recent Accounts</h4>
+                        <p class="mt-1 text-sm text-slate-600">Review new signups and statuses in one operational view.</p>
+                    </article>
+                </div>
+            </section>
+
+            <section class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+                <h3 class="text-lg font-semibold text-slate-900">Recent User Accounts</h3>
                 <div class="mt-4 overflow-x-auto">
                     <table class="min-w-full text-left text-sm">
                         <thead class="text-slate-500">
                             <tr>
-                                <th class="py-2 pe-4">Event</th>
-                                <th class="py-2 pe-4">User</th>
-                                <th class="py-2 pe-4">Time</th>
+                                <th class="py-2 pe-4">Name</th>
+                                <th class="py-2 pe-4">Email</th>
+                                <th class="py-2 pe-4">Role</th>
                                 <th class="py-2">Status</th>
                             </tr>
                         </thead>
                         <tbody class="text-slate-700">
-                            <tr class="border-t border-slate-100">
-                                <td class="py-3 pe-4">Guide profile approved</td>
-                                <td class="py-3 pe-4">Aisha K.</td>
-                                <td class="py-3 pe-4">10 mins ago</td>
-                                <td class="py-3"><span class="rounded-full bg-emerald-100 px-2 py-1 text-xs font-medium text-emerald-700">Completed</span></td>
-                            </tr>
-                            <tr class="border-t border-slate-100">
-                                <td class="py-3 pe-4">Refund request submitted</td>
-                                <td class="py-3 pe-4">Jonas P.</td>
-                                <td class="py-3 pe-4">28 mins ago</td>
-                                <td class="py-3"><span class="rounded-full bg-amber-100 px-2 py-1 text-xs font-medium text-amber-700">Reviewing</span></td>
-                            </tr>
+                            @forelse ($recentUsers as $user)
+                                <tr class="border-t border-slate-100">
+                                    <td class="py-3 pe-4">{{ $user->name }}</td>
+                                    <td class="py-3 pe-4">{{ $user->email }}</td>
+                                    <td class="py-3 pe-4">{{ str($user->role)->replace('_', ' ')->title() }}</td>
+                                    <td class="py-3">
+                                        <span class="rounded-full px-2 py-1 text-xs font-medium {{ $user->status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700' }}">
+                                            {{ str($user->status)->title() }}
+                                        </span>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr class="border-t border-slate-100">
+                                    <td colspan="4" class="py-4 text-slate-500">No users found.</td>
+                                </tr>
+                            @endforelse
                         </tbody>
                     </table>
                 </div>

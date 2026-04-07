@@ -1,8 +1,8 @@
 <?php
 
 use App\Models\User;
+
 use function Pest\Laravel\actingAs;
-use function Pest\Laravel\get;
 
 it('redirects each role from generic dashboard to their own dashboard', function (string $role, string $expectedRoute) {
     $user = User::factory()->create(['role' => $role]);
@@ -13,6 +13,7 @@ it('redirects each role from generic dashboard to their own dashboard', function
 })->with([
     ['tourist', 'dashboard.tourist'],
     ['guide', 'dashboard.guide'],
+    ['tour_guide', 'dashboard.guide'],
     ['admin', 'dashboard.admin'],
 ]);
 
@@ -25,6 +26,7 @@ it('allows users to access their own role dashboard', function (string $role, st
 })->with([
     ['tourist', 'dashboard.tourist'],
     ['guide', 'dashboard.guide'],
+    ['tour_guide', 'dashboard.guide'],
     ['admin', 'dashboard.admin'],
 ]);
 
@@ -38,6 +40,12 @@ it('forbids access to dashboards from other roles', function () {
     $guide = User::factory()->create(['role' => 'guide']);
 
     actingAs($guide)
+        ->get(route('dashboard.tourist'))
+        ->assertForbidden();
+
+    $tourGuide = User::factory()->create(['role' => 'tour_guide']);
+
+    actingAs($tourGuide)
         ->get(route('dashboard.tourist'))
         ->assertForbidden();
 });

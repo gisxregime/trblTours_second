@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'email', 'role', 'region', 'specialty', 'bio', 'password'])]
+#[Fillable(['name', 'full_name', 'email', 'role', 'status', 'region', 'specialty', 'bio', 'password'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -27,6 +27,7 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
+            'phone_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
     }
@@ -34,7 +35,7 @@ class User extends Authenticatable
     public function dashboardRouteName(): string
     {
         return match ($this->role) {
-            'guide' => 'dashboard.guide',
+            'guide', 'tour_guide' => 'dashboard.guide',
             'admin' => 'dashboard.admin',
             default => 'dashboard.tourist',
         };

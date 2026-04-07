@@ -11,10 +11,22 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (! Schema::hasTable('users')) {
+            return;
+        }
+
         Schema::table('users', function (Blueprint $table) {
-            $table->string('region')->nullable()->after('role');
-            $table->string('specialty')->nullable()->after('region');
-            $table->text('bio')->nullable()->after('specialty');
+            if (! Schema::hasColumn('users', 'region')) {
+                $table->string('region')->nullable()->after('role');
+            }
+
+            if (! Schema::hasColumn('users', 'specialty')) {
+                $table->string('specialty')->nullable()->after('region');
+            }
+
+            if (! Schema::hasColumn('users', 'bio')) {
+                $table->text('bio')->nullable()->after('specialty');
+            }
         });
     }
 

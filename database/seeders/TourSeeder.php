@@ -14,12 +14,16 @@ class TourSeeder extends Seeder
     public function run(): void
     {
         $guides = User::query()
-            ->where('role', 'guide')
+            ->whereIn('role', ['guide', 'tour_guide'])
             ->orderBy('id')
             ->get();
 
         if ($guides->isEmpty()) {
-            $guides = User::factory()->count(6)->guide()->create();
+            $guides = User::factory()
+                ->count(6)
+                ->guide()
+                ->state(['role' => 'tour_guide'])
+                ->create();
         }
 
         $featuredTours = [
