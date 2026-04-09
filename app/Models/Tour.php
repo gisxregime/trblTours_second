@@ -2,29 +2,61 @@
 
 namespace App\Models;
 
+use Database\Factories\TourFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Tour extends Model
 {
-    /** @use HasFactory<\Database\Factories\TourFactory> */
+    /** @use HasFactory<TourFactory> */
     use HasFactory;
 
     /**
      * @var list<string>
      */
     protected $fillable = [
+        'guide_id',
         'created_by',
         'name',
+        'title',
         'region',
+        'city',
+        'category',
+        'summary',
         'description',
         'duration',
+        'duration_label',
+        'duration_hours',
+        'duration_unit',
+        'min_guests',
+        'max_guests',
+        'difficulty',
+        'short_description',
+        'full_itinerary',
+        'inclusions',
+        'exclusions',
+        'what_to_bring',
         'price',
+        'base_price',
+        'price_per_person',
+        'pricing_tiers',
+        'fiesta_surcharge_enabled',
+        'fiesta_surcharge_amount',
+        'fiesta_start_date',
+        'fiesta_end_date',
+        'blackout_dates',
         'max_people',
         'image_url',
+        'image_path',
+        'featured_image',
+        'gallery_images',
+        'status',
+        'admin_approved',
         'activities',
         'is_featured',
+        'available_on',
+        'rating',
     ];
 
     /**
@@ -34,6 +66,22 @@ class Tour extends Model
     {
         return [
             'price' => 'decimal:2',
+            'base_price' => 'decimal:2',
+            'price_per_person' => 'decimal:2',
+            'duration_hours' => 'integer',
+            'min_guests' => 'integer',
+            'max_guests' => 'integer',
+            'inclusions' => 'array',
+            'pricing_tiers' => 'array',
+            'blackout_dates' => 'array',
+            'gallery_images' => 'array',
+            'fiesta_surcharge_enabled' => 'boolean',
+            'fiesta_surcharge_amount' => 'decimal:2',
+            'fiesta_start_date' => 'date',
+            'fiesta_end_date' => 'date',
+            'available_on' => 'date',
+            'rating' => 'decimal:1',
+            'admin_approved' => 'boolean',
             'is_featured' => 'boolean',
         ];
     }
@@ -41,5 +89,10 @@ class Tour extends Model
     public function guide(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function marketplaceGuide(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'guide_id');
     }
 }

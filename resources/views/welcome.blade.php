@@ -49,7 +49,7 @@
         }
 
         .brand-font {
-            font-family: 'Asimovian', 'Instrument Sans', sans-serif;
+            font-family: 'Asimovian', sans-serif;
             letter-spacing: 0.02em;
         }
 
@@ -379,58 +379,383 @@
 
         .hero-search {
             margin-top: 30px;
-            background: rgba(243, 241, 238, 0.98);
-            border-radius: 20px;
-            padding: 30px;
-            border: 1px solid rgba(255, 255, 255, 0.55);
-            box-shadow: 0 16px 34px rgba(43, 30, 22, 0.28);
+            position: relative;
+            background: rgba(255, 248, 235, 0.96);
+            border-radius: 999px;
+            padding: 7px;
+            border: 1px solid rgba(212, 165, 99, 0.28);
+            box-shadow: 0 12px 30px rgba(43, 30, 22, 0.24);
+            overflow: visible;
         }
 
         .hero-search-grid {
             display: grid;
-            grid-template-columns: 2fr 1fr 1fr 1fr auto;
-            gap: 16px;
+            grid-template-columns: 2.4fr 1.6fr auto;
+            gap: 0;
+            align-items: center;
         }
 
-        .search-field {
-            display: grid;
-            gap: 8px;
+        .search-segment {
+            min-height: 72px;
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            position: relative;
         }
 
-        .search-field label {
-            font-size: 13px;
-            color: #5f534b;
-            font-weight: 700;
+        .search-segment + .search-segment {
+            border-left: 1px solid #d4d0cb;
+        }
+
+        .search-segment-trigger {
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+        }
+
+        .search-icon {
+            color: #4b5055;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 auto;
+        }
+
+        .search-icon svg {
+            width: 22px;
+            height: 22px;
         }
 
         .search-input,
         .search-select {
             width: 100%;
-            border-radius: 10px;
-            border: 1px solid #d4d0cb;
+            border: none;
             min-height: 42px;
-            background: #ffffff;
-            padding: 0 12px;
-            color: #5f534b;
+            background: transparent;
+            padding: 0;
+            color: #41484f;
             font-size: 16px;
+            font-weight: 500;
+            outline: none;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            cursor: text;
+        }
+
+        .search-select {
+            cursor: pointer;
+        }
+
+        .search-display {
+            color: #41484f;
+            font-size: 16px;
+            font-weight: 500;
+            line-height: 1.2;
+            display: inline-flex;
+            align-items: center;
+            min-height: 22px;
+        }
+
+        .search-native-date {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .search-chevron {
+            margin-left: auto;
+            color: #5f534b;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .search-chevron svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .place-suggestions {
+            position: absolute;
+            top: auto;
+            bottom: calc(100% + 12px);
+            left: 0;
+            width: min(360px, 88vw);
+            border-radius: 16px;
+            background: #fff8eb;
+            border: 1px solid rgba(212, 165, 99, 0.32);
+            box-shadow: 0 14px 30px rgba(63, 45, 34, 0.2);
+            padding: 8px;
+            display: none;
+            z-index: 70;
+            max-height: 280px;
+            overflow: auto;
+        }
+
+        .place-suggestions.open {
+            display: grid;
+            gap: 4px;
+        }
+
+        .place-suggestion-item {
+            border: none;
+            background: transparent;
+            color: var(--brown-900);
+            font-size: 15px;
+            font-weight: 500;
+            text-align: left;
+            border-radius: 10px;
+            min-height: 38px;
+            padding: 0 12px;
+            cursor: pointer;
+        }
+
+        .place-suggestion-item:hover,
+        .place-suggestion-item:focus-visible {
+            background: #f3e5c8;
+            outline: none;
+        }
+
+        .date-toggle {
+            width: 100%;
+            border: none;
+            background: transparent;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            text-align: left;
+            color: inherit;
+            font: inherit;
+            cursor: pointer;
+        }
+
+        .date-toggle:focus-visible {
+            outline: 2px solid rgba(139, 69, 19, 0.45);
+            outline-offset: 2px;
+            border-radius: 8px;
+        }
+
+        .date-dropdown {
+            position: absolute;
+            top: auto;
+            bottom: calc(100% + 12px);
+            left: 0;
+            width: min(360px, 88vw);
+            border-radius: 20px;
+            background: #fff8eb;
+            border: 1px solid rgba(212, 165, 99, 0.32);
+            box-shadow: 0 18px 36px rgba(63, 45, 34, 0.2);
+            padding: 16px;
+            z-index: 70;
+            display: none;
+        }
+
+        .date-dropdown.open {
+            display: block;
+        }
+
+        .date-dropdown-title {
+            color: var(--brown-900);
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .date-fields {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .date-field {
+            display: grid;
+            gap: 6px;
+        }
+
+        .date-field label {
+            color: var(--brown-700);
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .date-field input {
+            width: 100%;
+            min-height: 38px;
+            border: 1px solid #d8d2c7;
+            border-radius: 10px;
+            background: #fffefb;
+            color: var(--brown-900);
+            font-size: 14px;
+            padding: 0 10px;
+        }
+
+        .date-duration {
+            margin-top: 12px;
+            color: var(--brown-800);
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .guests-toggle {
+            width: 100%;
+            border: none;
+            background: transparent;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            text-align: left;
+            color: inherit;
+            font: inherit;
+            cursor: pointer;
+        }
+
+        .guests-toggle:focus-visible {
+            outline: 2px solid rgba(139, 69, 19, 0.45);
+            outline-offset: 2px;
+            border-radius: 8px;
+        }
+
+        .guests-dropdown {
+            position: absolute;
+            top: auto;
+            bottom: calc(100% + 12px);
+            left: 0;
+            width: min(360px, 86vw);
+            border-radius: 20px;
+            background: #fff8eb;
+            border: 1px solid rgba(212, 165, 99, 0.32);
+            box-shadow: 0 18px 36px rgba(63, 45, 34, 0.2);
+            padding: 20px;
+            z-index: 60;
+            display: none;
+        }
+
+        .guests-dropdown.open {
+            display: block;
+        }
+
+        .guests-title {
+            color: var(--brown-900);
+            font-size: 18px;
+            font-weight: 800;
+            margin-bottom: 16px;
+        }
+
+        .guest-row {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 14px;
+        }
+
+        .guest-row:last-of-type {
+            margin-bottom: 18px;
+        }
+
+        .guest-label {
+            color: var(--brown-900);
+            font-size: 16px;
+            font-weight: 600;
+            line-height: 1.2;
+        }
+
+        .guest-subtext {
+            color: var(--brown-700);
+            font-size: 14px;
+            margin-top: 2px;
+        }
+
+        .guest-counter {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .counter-button {
+            width: 42px;
+            height: 42px;
+            border-radius: 999px;
+            border: 1px solid #d8d2c7;
+            background: #f5efe1;
+            color: #5f534b;
+            font-size: 28px;
+            line-height: 1;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .counter-button:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+        .counter-value {
+            min-width: 22px;
+            text-align: center;
+            color: var(--brown-900);
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .guests-apply {
+            width: 122px;
+            min-height: 42px;
+            border: none;
+            border-radius: 999px;
+            background: linear-gradient(180deg, #d4a563 0%, #bb8547 100%);
+            color: #fff;
+            font-size: 15px;
+            font-weight: 800;
+            cursor: pointer;
+            margin-left: auto;
+            display: block;
+            box-shadow: 0 10px 20px rgba(111, 93, 82, 0.25);
+        }
+
+        .search-input::placeholder {
+            color: #41484f;
+            opacity: 1;
         }
 
         .search-action {
             display: flex;
-            align-items: flex-end;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 7px;
+            padding-left: 12px;
+            min-height: 72px;
+            border-left: 1px solid #d4d0cb;
         }
 
         .search-button {
             width: auto;
-            min-height: 42px;
+            min-height: 56px;
             padding: 0 24px;
             border: none;
-            border-radius: 10px;
-            background: #c8ab64;
+            border-radius: 999px;
+            background: linear-gradient(180deg, #d4a563 0%, #bc8747 100%);
             color: #fff;
             font-weight: 800;
             font-size: 16px;
             cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 8px 20px rgba(111, 93, 82, 0.35);
+        }
+
+        .search-button .search-icon {
+            color: #fff;
         }
 
         .why,
@@ -826,12 +1151,52 @@
             }
 
             .hero-search-grid {
-                grid-template-columns: 2fr 2fr;
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+            }
+
+            .hero-search {
+                border-radius: 24px;
+                padding: 14px;
+            }
+
+            .search-segment {
+                min-height: 56px;
+                border-radius: 14px;
+                border: 1px solid #d4d0cb;
+                background: #fffefb;
+            }
+
+            .search-segment + .search-segment {
+                border-left: none;
             }
 
             .search-action {
                 grid-column: 1 / -1;
-                justify-content: flex-end;
+                border-left: none;
+                padding: 0;
+                min-height: 56px;
+            }
+
+            .guests-dropdown {
+                top: calc(100% + 12px);
+                bottom: auto;
+                right: 0;
+                left: auto;
+            }
+
+            .date-dropdown {
+                top: calc(100% + 12px);
+                bottom: auto;
+                right: 0;
+                left: auto;
+            }
+
+            .place-suggestions {
+                top: calc(100% + 12px);
+                bottom: auto;
+                right: 0;
+                left: auto;
             }
 
             .why-grid,
@@ -878,6 +1243,33 @@
 
             .search-button {
                 width: 100%;
+                min-height: 52px;
+            }
+
+            .guests-dropdown {
+                left: 0;
+                right: 0;
+                width: 100%;
+            }
+
+            .date-dropdown {
+                left: 0;
+                right: 0;
+                width: 100%;
+            }
+
+            .place-suggestions {
+                left: 0;
+                right: 0;
+                width: 100%;
+            }
+
+            .date-fields {
+                grid-template-columns: 1fr;
+            }
+
+            .search-segment + .search-segment {
+                border-left: none;
             }
 
             .footer-top {
@@ -962,19 +1354,52 @@
 
                 <div class="hero-search">
                     <div class="hero-search-grid">
-                        <div class="search-field"><label for="accommodation">Accommodation</label><input id="accommodation" class="search-input" type="text" placeholder="Where do you want to go?"></div>
-                        <div class="search-field"><label for="checkin">Check-in</label><input id="checkin" class="search-input" type="date"></div>
-                        <div class="search-field"><label for="checkout">Check-out</label><input id="checkout" class="search-input" type="date"></div>
-                        <div class="search-field">
-                            <label for="region">Region</label>
-                            <select id="region" class="search-select">
-                                <option selected>All regions</option>
-                                <option>Luzon</option>
-                                <option>Visayas</option>
-                                <option>Mindanao</option>
-                            </select>
+                        <div class="search-segment" id="locationTrigger">
+                            <span class="search-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M12 21s7-4.35 7-11a7 7 0 1 0-14 0c0 6.65 7 11 7 11Z" />
+                                    <circle cx="12" cy="10" r="2.5" />
+                                </svg>
+                            </span>
+                            <input id="accommodation" class="search-input" type="text" placeholder="Where to?" autocomplete="off" aria-label="Where to" aria-autocomplete="list" aria-controls="placeSuggestions">
+                            <div id="placeSuggestions" class="place-suggestions" role="listbox" aria-label="Place suggestions"></div>
                         </div>
-                        <div class="search-action"><button class="search-button" type="button">Search</button></div>
+                        <div class="search-segment" id="anytimeTrigger">
+                            <span class="search-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="3" y="5" width="18" height="16" rx="2" />
+                                    <path d="M16 3v4M8 3v4M3 10h18" />
+                                </svg>
+                            </span>
+                            <button class="date-toggle" id="anytimeToggle" type="button" aria-expanded="false" aria-controls="dateDropdown" aria-label="Select dates">
+                                <span id="anytimeLabel" class="search-display">Anytime</span>
+                            </button>
+                            <div class="date-dropdown" id="dateDropdown" role="dialog" aria-label="Select stay dates">
+                                <p class="date-dropdown-title">Select your stay</p>
+                                <div class="date-fields">
+                                    <div class="date-field">
+                                        <label for="checkinDate">Check-in</label>
+                                        <input id="checkinDate" type="date">
+                                    </div>
+                                    <div class="date-field">
+                                        <label for="checkoutDate">Check-out</label>
+                                        <input id="checkoutDate" type="date">
+                                    </div>
+                                </div>
+                                <p class="date-duration" id="stayDuration">Duration: Select both dates</p>
+                            </div>
+                        </div>
+                        <div class="search-action">
+                            <button class="search-button" type="button">
+                                <span class="search-icon" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <circle cx="11" cy="11" r="7" />
+                                        <path d="m20 20-3.5-3.5" />
+                                    </svg>
+                                </span>
+                                Search
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1166,6 +1591,299 @@
 
             initFadeCarousel('heroCarousel', '.hero-slide', 4000);
             initFadeCarousel('favoritesCarousel', '.favorite-card', 1800);
+
+            const locationTrigger = document.getElementById('locationTrigger');
+            const accommodationInput = document.getElementById('accommodation');
+            const placeSuggestions = document.getElementById('placeSuggestions');
+
+            if (locationTrigger && accommodationInput && placeSuggestions) {
+                const destinations = [
+                    'El Nido, Palawan',
+                    'Coron, Palawan',
+                    'Siargao',
+                    'Bohol',
+                    'Cebu City',
+                    'Banaue',
+                    'Vigan',
+                    'Boracay',
+                    'Baguio',
+                    'Davao City',
+                    'Camiguin',
+                    'Siquijor'
+                ];
+
+                const renderSuggestions = (query = '') => {
+                    const normalizedQuery = query.trim().toLowerCase();
+                    const results = destinations
+                        .filter((destination) => destination.toLowerCase().includes(normalizedQuery))
+                        .slice(0, 8);
+
+                    placeSuggestions.innerHTML = '';
+
+                    results.forEach((destination) => {
+                        const item = document.createElement('button');
+                        item.type = 'button';
+                        item.className = 'place-suggestion-item';
+                        item.setAttribute('role', 'option');
+                        item.setAttribute('data-place', destination);
+                        item.textContent = destination;
+                        placeSuggestions.appendChild(item);
+                    });
+                };
+
+                const openSuggestions = () => {
+                    placeSuggestions.classList.add('open');
+                };
+
+                const closeSuggestions = () => {
+                    placeSuggestions.classList.remove('open');
+                };
+
+                accommodationInput.addEventListener('focus', () => {
+                    renderSuggestions(accommodationInput.value);
+                    openSuggestions();
+                });
+
+                accommodationInput.addEventListener('input', () => {
+                    renderSuggestions(accommodationInput.value);
+                    openSuggestions();
+                });
+
+                placeSuggestions.addEventListener('click', (event) => {
+                    if (!(event.target instanceof Element)) {
+                        return;
+                    }
+
+                    const suggestion = event.target.closest('[data-place]');
+                    if (!suggestion) {
+                        return;
+                    }
+
+                    const selectedPlace = suggestion.getAttribute('data-place');
+                    if (!selectedPlace) {
+                        return;
+                    }
+
+                    accommodationInput.value = selectedPlace;
+                    closeSuggestions();
+                    accommodationInput.focus();
+                });
+
+                document.addEventListener('click', (event) => {
+                    if (!(event.target instanceof Element)) {
+                        return;
+                    }
+
+                    if (!locationTrigger.contains(event.target)) {
+                        closeSuggestions();
+                    }
+                });
+            }
+
+            const anytimeTrigger = document.getElementById('anytimeTrigger');
+            const anytimeToggle = document.getElementById('anytimeToggle');
+            const anytimeLabel = document.getElementById('anytimeLabel');
+            const dateDropdown = document.getElementById('dateDropdown');
+            const checkinDate = document.getElementById('checkinDate');
+            const checkoutDate = document.getElementById('checkoutDate');
+            const stayDuration = document.getElementById('stayDuration');
+
+            if (anytimeTrigger && anytimeToggle && anytimeLabel && dateDropdown && checkinDate && checkoutDate && stayDuration) {
+                const setDateOpenState = (isOpen) => {
+                    dateDropdown.classList.toggle('open', isOpen);
+                    anytimeToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+                };
+
+                const formatDate = (dateString) => {
+                    const date = new Date(`${dateString}T00:00:00`);
+                    return date.toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                    });
+                };
+
+                const getNights = (startDate, endDate) => {
+                    const start = new Date(`${startDate}T00:00:00`).getTime();
+                    const end = new Date(`${endDate}T00:00:00`).getTime();
+                    const millisecondsPerDay = 1000 * 60 * 60 * 24;
+                    return Math.round((end - start) / millisecondsPerDay);
+                };
+
+                const updateDateSummary = () => {
+                    const start = checkinDate.value;
+                    const end = checkoutDate.value;
+
+                    if (!start && !end) {
+                        anytimeLabel.textContent = 'Anytime';
+                        stayDuration.textContent = 'Duration: Select both dates';
+                        return;
+                    }
+
+                    if (start && !end) {
+                        anytimeLabel.textContent = formatDate(start);
+                        stayDuration.textContent = 'Duration: Select check-out date';
+                        return;
+                    }
+
+                    if (!start && end) {
+                        anytimeLabel.textContent = formatDate(end);
+                        stayDuration.textContent = 'Duration: Select check-in date';
+                        return;
+                    }
+
+                    if (!start || !end) {
+                        return;
+                    }
+
+                    const nights = getNights(start, end);
+                    if (nights <= 0) {
+                        stayDuration.textContent = 'Duration: Check-out must be after check-in';
+                        anytimeLabel.textContent = `${formatDate(start)} - ${formatDate(end)}`;
+                        return;
+                    }
+
+                    stayDuration.textContent = `Duration: ${nights} ${nights === 1 ? 'night' : 'nights'}`;
+                    anytimeLabel.textContent = `${formatDate(start)} - ${formatDate(end)}`;
+                };
+
+                anytimeToggle.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    setDateOpenState(!dateDropdown.classList.contains('open'));
+                });
+
+                dateDropdown.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                });
+
+                checkinDate.addEventListener('change', () => {
+                    if (checkoutDate.value && checkinDate.value && checkoutDate.value <= checkinDate.value) {
+                        checkoutDate.value = '';
+                    }
+                    checkoutDate.min = checkinDate.value || '';
+                    updateDateSummary();
+                });
+
+                checkoutDate.addEventListener('change', updateDateSummary);
+
+                document.addEventListener('click', (event) => {
+                    if (!(event.target instanceof Element)) {
+                        return;
+                    }
+
+                    if (!anytimeTrigger.contains(event.target)) {
+                        setDateOpenState(false);
+                    }
+                });
+            }
+
+            const guestsTrigger = document.getElementById('guestsTrigger');
+            const guestsToggle = document.getElementById('guestsToggle');
+            const guestsDropdown = document.getElementById('guestsDropdown');
+            const guestsSummary = document.getElementById('guestsSummary');
+            const guestsApply = document.getElementById('guestsApply');
+            const adultsValueElement = document.getElementById('adultsValue');
+            const childrenValueElement = document.getElementById('childrenValue');
+            const adultsDecrement = document.getElementById('adultsDecrement');
+            const adultsIncrement = document.getElementById('adultsIncrement');
+            const childrenDecrement = document.getElementById('childrenDecrement');
+            const childrenIncrement = document.getElementById('childrenIncrement');
+
+            if (
+                guestsTrigger &&
+                guestsToggle &&
+                guestsDropdown &&
+                guestsSummary &&
+                guestsApply &&
+                adultsValueElement &&
+                childrenValueElement &&
+                adultsDecrement &&
+                adultsIncrement &&
+                childrenDecrement &&
+                childrenIncrement
+            ) {
+                let adults = Number.parseInt(adultsValueElement.textContent ?? '2', 10) || 2;
+                let children = Number.parseInt(childrenValueElement.textContent ?? '0', 10) || 0;
+
+                const setOpenState = (isOpen) => {
+                    guestsDropdown.classList.toggle('open', isOpen);
+                    guestsToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+                };
+
+                const updateGuestSummary = () => {
+                    const adultLabel = adults === 1 ? 'Adult' : 'Adults';
+                    const childrenLabel = children === 1 ? 'Child' : 'Children';
+
+                    if (children > 0) {
+                        guestsSummary.textContent = `${adults} ${adultLabel}, ${children} ${childrenLabel}`;
+                    } else {
+                        guestsSummary.textContent = `${adults} ${adultLabel}`;
+                    }
+                };
+
+                const syncGuestCounters = () => {
+                    adultsValueElement.textContent = String(adults);
+                    childrenValueElement.textContent = String(children);
+                    adultsDecrement.disabled = adults <= 1;
+                    childrenDecrement.disabled = children <= 0;
+                };
+
+                guestsToggle.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    setOpenState(!guestsDropdown.classList.contains('open'));
+                });
+
+                guestsDropdown.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                });
+
+                adultsIncrement.addEventListener('click', () => {
+                    adults += 1;
+                    syncGuestCounters();
+                });
+
+                adultsDecrement.addEventListener('click', () => {
+                    if (adults > 1) {
+                        adults -= 1;
+                        syncGuestCounters();
+                    }
+                });
+
+                childrenIncrement.addEventListener('click', () => {
+                    children += 1;
+                    syncGuestCounters();
+                });
+
+                childrenDecrement.addEventListener('click', () => {
+                    if (children > 0) {
+                        children -= 1;
+                        syncGuestCounters();
+                    }
+                });
+
+                guestsApply.addEventListener('click', () => {
+                    updateGuestSummary();
+                    setOpenState(false);
+                });
+
+                document.addEventListener('click', (event) => {
+                    if (!(event.target instanceof Element)) {
+                        return;
+                    }
+
+                    if (!guestsTrigger.contains(event.target)) {
+                        setOpenState(false);
+                    }
+                });
+
+                document.addEventListener('keydown', (event) => {
+                    if (event.key === 'Escape') {
+                        setOpenState(false);
+                    }
+                });
+
+                syncGuestCounters();
+                updateGuestSummary();
+            }
         })();
     </script>
 </body>

@@ -45,4 +45,49 @@ class User extends Authenticatable
     {
         return $this->hasMany(Tour::class, 'created_by');
     }
+
+    public function marketplaceTours(): HasMany
+    {
+        return $this->hasMany(Tour::class, 'guide_id');
+    }
+
+    public function guideAvailabilities(): HasMany
+    {
+        return $this->hasMany(GuideAvailability::class, 'guide_id');
+    }
+
+    public function bookingRequestsAsGuide(): HasMany
+    {
+        return $this->hasMany(BookingRequest::class, 'guide_id');
+    }
+
+    public function bookingRequestsAsTourist(): HasMany
+    {
+        return $this->hasMany(BookingRequest::class, 'tourist_id');
+    }
+
+    public function bookingsAsGuide(): HasMany
+    {
+        return $this->hasMany(Booking::class, 'guide_id');
+    }
+
+    public function bookingsAsTourist(): HasMany
+    {
+        return $this->hasMany(Booking::class, 'tourist_id');
+    }
+
+    public function guideStories(): HasMany
+    {
+        return $this->hasMany(GuideStory::class, 'guide_id');
+    }
+
+    public function guideEarnings(): HasMany
+    {
+        return $this->hasMany(GuideEarning::class, 'guide_id');
+    }
+
+    public function guideReviews(): HasMany
+    {
+        return $this->hasMany(TourReview::class, 'guide_id');
+    }
 }
