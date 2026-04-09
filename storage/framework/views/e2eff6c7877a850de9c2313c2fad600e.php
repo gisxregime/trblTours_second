@@ -97,6 +97,13 @@
                         <p class="mt-1 text-xs text-[#9a7a58]">Available</p>
                     </div>
 
+                    <!-- Featured Tours -->
+                    <div class="rounded-xl border border-[#d4a563]/30 bg-white p-4 shadow-[0_10px_24px_-16px_rgba(122,85,50,0.5)]">
+                        <p class="text-sm font-medium text-[#8a6746]">Featured Tours</p>
+                        <p class="mt-2 text-2xl font-bold text-[#7a5532]"><?php echo e($featuredTours); ?></p>
+                        <p class="mt-1 text-xs text-[#9a7a58]">Based on bookings</p>
+                    </div>
+
                     <!-- Rating -->
                     <div class="rounded-xl border border-[#d4a563]/30 bg-white p-4 shadow-[0_10px_24px_-16px_rgba(122,85,50,0.5)]">
                         <p class="text-sm font-medium text-[#8a6746]">Rating</p>
