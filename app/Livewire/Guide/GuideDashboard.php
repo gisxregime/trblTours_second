@@ -151,6 +151,22 @@ class GuideDashboard extends Component
             $activeTours = $activeToursQuery->count();
         }
 
+        $featuredTours = 0;
+        if (Schema::hasTable('bookings') && Schema::hasColumn('bookings', 'tour_id')) {
+            $featuredToursQuery = Booking::query()
+                ->select('bookings.tour_id')
+                ->join('tours', 'tours.id', '=', 'bookings.tour_id')
+                ->whereNotNull('bookings.tour_id');
+
+            if (Schema::hasColumn('tours', 'guide_id')) {
+                $featuredToursQuery->where('tours.guide_id', $guideId);
+            } else {
+                $featuredToursQuery->where('tours.created_by', $guideId);
+            }
+
+            $featuredTours = (int) $featuredToursQuery->distinct()->count('bookings.tour_id');
+        }
+
         $accepted = Schema::hasTable('booking_requests')
             ? BookingRequest::query()->where('guide_id', $guideId)->where('status', 'accepted')->count()
             : 0;
@@ -265,6 +281,7 @@ class GuideDashboard extends Component
             'showRejectedNotice' => ($profile['approval_status'] ?? null) === 'rejected',
             'rejectionReason' => (string) ($profile['rejection_reason'] ?? ''),
             'activeTours' => $activeTours,
+            'featuredTours' => $featuredTours,
             'pendingRequests' => $pendingRequests,
             'todaySchedule' => $todaySchedule,
             'responseRate' => $responseRate,

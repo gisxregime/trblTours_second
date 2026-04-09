@@ -15,7 +15,7 @@
             <div class="mt-4 flex flex-wrap gap-2">
                 <button type="button" wire:click="$set('statusFilter', 'all')" class="rounded-full px-3 py-1.5 text-sm font-semibold {{ $statusFilter === 'all' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }}">All</button>
                 <button type="button" wire:click="$set('statusFilter', 'pending')" class="rounded-full px-3 py-1.5 text-sm font-semibold {{ $statusFilter === 'pending' ? 'bg-amber-600 text-white' : 'bg-amber-100 text-amber-800 hover:bg-amber-200' }}">Pending</button>
-                <button type="button" wire:click="$set('statusFilter', 'accepted')" class="rounded-full px-3 py-1.5 text-sm font-semibold {{ $statusFilter === 'accepted' ? 'bg-emerald-600 text-white' : 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200' }}">Accepted</button>
+                <button type="button" wire:click="$set('statusFilter', 'accepted')" class="rounded-full px-3 py-1.5 text-sm font-semibold {{ $statusFilter === 'accepted' ? 'bg-[#7a8730] text-white' : 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200' }}">Accepted</button>
                 <button type="button" wire:click="$set('statusFilter', 'declined')" class="rounded-full px-3 py-1.5 text-sm font-semibold {{ $statusFilter === 'declined' ? 'bg-rose-600 text-white' : 'bg-rose-100 text-rose-800 hover:bg-rose-200' }}">Declined</button>
                 <button type="button" wire:click="$set('statusFilter', 'cancelled')" class="rounded-full px-3 py-1.5 text-sm font-semibold {{ $statusFilter === 'cancelled' ? 'bg-slate-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }}">Cancelled</button>
             </div>
@@ -71,7 +71,7 @@
 
                     @if ($selectedRequest->status === 'pending')
                         <div class="mt-5 space-y-3 border-t border-slate-200 pt-4">
-                            <button type="button" wire:click="acceptRequest({{ $selectedRequest->id }})" class="w-full rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-500">
+                            <button type="button" wire:click="acceptRequest({{ $selectedRequest->id }})" class="w-full rounded-lg bg-[#7a8730] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#697629]">
                                 Accept Request
                             </button>
 

@@ -75,7 +75,7 @@
                         @enderror
 
                         <div class="mt-3 flex justify-end">
-                            <button type="submit" class="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500">
+                            <button type="submit" class="rounded-lg bg-[#7a8730] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#697629]">
                                 Send Message
                             </button>
                         </div>

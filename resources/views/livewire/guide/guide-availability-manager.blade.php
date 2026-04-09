@@ -56,7 +56,7 @@
                 </div>
 
                 <div class="md:col-span-2 flex justify-end">
-                    <button type="submit" class="rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-500">
+                    <button type="submit" class="rounded-lg bg-[#7a8730] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#697629]">
                         {{ $editingId ? 'Update Availability' : 'Save Availability' }}
                     </button>
                 </div>
