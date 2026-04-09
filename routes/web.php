@@ -1,8 +1,15 @@
 <?php
 
-use App\Models\Tour;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\GuideProfileController;
 use App\Http\Controllers\ProfileController;
+use App\Livewire\Guide\GuideAvailabilityManager;
+use App\Livewire\Guide\GuideBookingRequests;
+use App\Livewire\Guide\GuideDashboard;
+use App\Livewire\Guide\GuideMessages;
+use App\Livewire\Guide\GuideProfile;
+use App\Livewire\Guide\GuideTours;
+use App\Models\Tour;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
@@ -80,9 +87,30 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard/tourist', [DashboardController::class, 'tourist'])
         ->middleware('role:tourist')
         ->name('dashboard.tourist');
-    Route::get('/dashboard/guide', [DashboardController::class, 'guide'])
+    Route::get('/dashboard/guide', GuideDashboard::class)
         ->middleware('role:guide')
         ->name('dashboard.guide');
+    Route::get('/dashboard/guide/profile', GuideProfile::class)
+        ->middleware('role:guide')
+        ->name('dashboard.guide.profile.show');
+    Route::get('/dashboard/guide/profile/edit', [GuideProfileController::class, 'edit'])
+        ->middleware('role:guide')
+        ->name('dashboard.guide.profile.edit');
+    Route::patch('/dashboard/guide/profile', [GuideProfileController::class, 'update'])
+        ->middleware('role:guide')
+        ->name('dashboard.guide.profile.update');
+    Route::get('/dashboard/guide/tours', GuideTours::class)
+        ->middleware('role:guide')
+        ->name('dashboard.guide.tours');
+    Route::get('/dashboard/guide/availability', GuideAvailabilityManager::class)
+        ->middleware('role:guide')
+        ->name('dashboard.guide.availability');
+    Route::get('/dashboard/guide/requests', GuideBookingRequests::class)
+        ->middleware('role:guide')
+        ->name('dashboard.guide.requests');
+    Route::get('/dashboard/guide/messages', GuideMessages::class)
+        ->middleware('role:guide')
+        ->name('dashboard.guide.messages');
     Route::get('/dashboard/admin', [DashboardController::class, 'admin'])
         ->middleware('role:admin')
         ->name('dashboard.admin');
