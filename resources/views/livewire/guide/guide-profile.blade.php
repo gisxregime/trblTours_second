@@ -331,24 +331,35 @@
                         @error('postText') <p class="text-xs text-rose-600">{{ $message }}</p> @enderror
 
                         <div>
-                            <label class="mb-1 block text-sm font-medium text-slate-700" for="post_images">Upload Photos</label>
+                            <p class="mb-1 block text-sm font-medium text-slate-700">Upload Photos</p>
                             <input
                                 id="post_images"
-                                wire:model="postImages"
+                                wire:model="newPostImages"
+                                wire:key="post-images-input-{{ count($postImages ?? []) }}"
                                 type="file"
-                                accept="image/*"
+                                name="post_images[]"
+                                accept="image/jpeg,image/png,image/webp"
                                 multiple
-                                class="block w-full text-sm text-slate-700 file:mr-3 file:rounded-lg file:border-0 file:bg-[#7a8730] file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-[#697629]"
+                                class="sr-only"
                             >
+                            <label for="post_images" class="inline-flex cursor-pointer items-center rounded-lg bg-[#7a8730] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#697629]">
+                                Choose up to 5 photos
+                            </label>
                         </div>
-                        <p class="text-xs text-slate-500">Upload up to 5 images for post preview.</p>
-                        <div wire:loading wire:target="postImages" class="text-xs text-[#6c792a]">Uploading photos...</div>
+                        <div wire:loading wire:target="newPostImages" class="text-xs text-[#6c792a]">Uploading photos...</div>
+                        @error('newPostImages') <p class="text-xs text-rose-600">{{ $message }}</p> @enderror
+                        @error('newPostImages.*') <p class="text-xs text-rose-600">{{ $message }}</p> @enderror
                         @error('postImages') <p class="text-xs text-rose-600">{{ $message }}</p> @enderror
                         @error('postImages.*') <p class="text-xs text-rose-600">{{ $message }}</p> @enderror
 
                         @php
                             $hasNewPostPhotos = is_array($postImages ?? null) && count($postImages) > 0;
+                            $postPhotosCount = $hasNewPostPhotos ? count($postImages) : 0;
                         @endphp
+
+                        <p class="text-xs text-slate-500">
+                            {{ $hasNewPostPhotos ? $postPhotosCount.' of 5 photos selected' : 'No photos uploaded yet. Thumbnails will appear below.' }}
+                        </p>
 
                         <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
                             @if ($hasNewPostPhotos)
@@ -361,7 +372,7 @@
                                             class="absolute right-1 top-1 inline-flex h-6 w-6 items-center justify-center rounded-full bg-black/65 text-xs font-bold text-white transition hover:bg-black"
                                             aria-label="Remove photo"
                                         >
-                                            ×
+                                            <i class="fa-solid fa-xmark" aria-hidden="true"></i>
                                         </button>
                                     </div>
                                 @endforeach
@@ -376,7 +387,7 @@
                             <button
                                 type="submit"
                                 wire:loading.attr="disabled"
-                                wire:target="createPost,postImages,cancelPostDraft,removePostImage"
+                                wire:target="createPost,newPostImages,cancelPostDraft,removePostImage"
                                 class="inline-flex items-center rounded-lg bg-[#556b2f] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#465826] disabled:cursor-not-allowed disabled:opacity-60"
                                 @disabled(trim($postText) === '' || ! $hasNewPostPhotos)
                             >
@@ -387,7 +398,7 @@
                                 type="button"
                                 wire:click="cancelPostDraft"
                                 wire:loading.attr="disabled"
-                                wire:target="createPost,postImages,cancelPostDraft,removePostImage"
+                                wire:target="createPost,newPostImages,cancelPostDraft,removePostImage"
                                 class="inline-flex items-center rounded-lg border border-[#d4a563] bg-white px-4 py-2 text-sm font-semibold text-[#7a5532] transition hover:bg-[#fff7ec]"
                             >
                                 Cancel
@@ -419,12 +430,12 @@
                                         </div>
                                         <div>
                                             <p class="text-sm font-semibold text-slate-900">{{ $postCard['guide_name'] ?? ($guide['display_name'] ?? 'Guide') }}</p>
-                                            <p class="text-xs text-slate-500">{{ $postCard['created_at_human'] ?? 'Just now' }}</p>
+                                            <p class="text-xs text-[#7a5532]">{{ $postCard['created_at_human'] ?? 'Just now' }}</p>
                                         </div>
                                     </div>
 
                                     <div class="relative" x-data="{ openMenu: false }">
-                                        <button type="button" @click="openMenu = !openMenu" class="rounded-full p-2 text-slate-500 transition hover:bg-[#fff7ec] hover:text-[#7a5532]">⋮</button>
+                                        <button type="button" @click="openMenu = !openMenu" class="rounded-full p-2 text-[#7a5532] transition hover:bg-[#fff7ec] hover:text-[#5f3f25]">⋮</button>
                                         <div x-show="openMenu" x-cloak @click.away="openMenu = false" class="absolute right-0 z-20 mt-1 w-32 rounded-lg border border-[#d4a563]/60 bg-white p-1 shadow-lg">
                                             <button type="button" class="w-full rounded-md px-3 py-2 text-left text-xs font-medium text-[#556b2f] hover:bg-[#f4f6eb]" wire:click="startEditingPost({{ $post->id }})">Edit</button>
                                             <button type="button" class="w-full rounded-md px-3 py-2 text-left text-xs font-medium text-rose-600 hover:bg-rose-50" wire:click="deletePost({{ $post->id }})" onclick="return confirm('Delete this post?')">Delete</button>
@@ -441,14 +452,14 @@
                                             <button type="button" wire:click="cancelEditingPost" class="rounded-lg border border-[#d4a563] px-3 py-1.5 text-xs font-semibold text-[#7a5532] hover:bg-[#fff7ec]">Cancel</button>
                                         </div>
                                     @else
-                                        <p class="text-sm leading-6 text-slate-700">{{ $postCard['text'] ?? 'No message provided.' }}</p>
+                                        <p class="text-sm leading-6 text-[#5f3f25]">{{ $postCard['text'] ?? 'No message provided.' }}</p>
                                     @endif
                                 </div>
 
                                 @if ($postCardImages !== [])
                                     <div class="grid gap-1 px-5 pb-4 {{ count($postCardImages) === 1 ? 'grid-cols-1' : 'grid-cols-2' }}">
                                         @foreach ($postCardImages as $imageIndex => $imageUrl)
-                                            <button type="button" wire:key="post-image-{{ $post->id }}-{{ $imageIndex }}" class="overflow-hidden rounded-xl border border-[#e8d3aa] bg-[#f4f6eb] {{ count($postCardImages) === 1 ? 'h-72' : 'h-44' }}" @click="openPostLightbox(@js($postCardImages), {{ $imageIndex }})">
+                                            <button type="button" wire:key="post-image-{{ $post->id }}-{{ $imageIndex }}" class="overflow-hidden rounded-xl border-2 border-[#b06f3b] bg-[#f6eadb] {{ count($postCardImages) === 1 ? 'h-[28rem]' : 'h-56' }}" @click="openPostLightbox(@js($postCardImages), {{ $imageIndex }})">
                                                 <img src="{{ $imageUrl }}" alt="Post image" class="h-full w-full object-cover">
                                             </button>
                                         @endforeach
@@ -456,25 +467,25 @@
                                 @endif
 
                                 <div class="border-t border-[#ead2ad] px-5 py-3">
-                                    <div class="flex items-center justify-between text-xs text-slate-500">
-                                        <p>❤️ {{ $postCard['likes_count'] ?? 0 }}</p>
-                                        <p>💬 {{ $postCard['messages_count'] ?? 0 }} messages</p>
+                                    <div class="flex items-center justify-between text-xs text-[#7a5532]">
+                                        <p class="inline-flex items-center gap-1"><i class="fa-solid fa-heart" aria-hidden="true"></i> {{ $postCard['likes_count'] ?? 0 }}</p>
+                                        <p class="inline-flex items-center gap-1"><i class="fa-solid fa-message" aria-hidden="true"></i> {{ $postCard['messages_count'] ?? 0 }} messages</p>
                                     </div>
 
                                     <div class="mt-3 grid grid-cols-2 gap-2 border-t border-[#f1e2c8] pt-3">
                                         <button type="button" wire:click="toggleLike({{ $post->id }})" class="inline-flex items-center justify-center gap-1 rounded-lg px-3 py-2 text-sm font-semibold transition {{ $postLiked ? 'bg-rose-50 text-rose-600' : 'bg-[#f8f3e7] text-[#7a5532] hover:bg-[#f1e8d5]' }}">
-                                            <span>{{ $postLiked ? '❤️' : '🤍' }}</span>
+                                            <i class="{{ $postLiked ? 'fa-solid' : 'fa-regular' }} fa-heart" aria-hidden="true"></i>
                                             <span>Like</span>
                                         </button>
                                         <button type="button" wire:click="toggleMessageComposer({{ $post->id }})" class="inline-flex items-center justify-center gap-1 rounded-lg bg-[#f8f3e7] px-3 py-2 text-sm font-semibold text-[#556b2f] transition hover:bg-[#eaf0d6]">
-                                            <span>💬</span>
+                                            <i class="fa-solid fa-message" aria-hidden="true"></i>
                                             <span>Message</span>
                                         </button>
                                     </div>
 
                                     @if ($messageComposerOpen[$post->id] ?? false)
                                         <div class="mt-3 flex items-center gap-2">
-                                            <input type="text" wire:model.live="messageInputs.{{ $post->id }}" class="w-full rounded-lg border border-[#d9c08c] bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-[#7a8f3a] focus:ring-2 focus:ring-[#7a8f3a]/20" placeholder="Type your message to the guide...">
+                                            <input type="text" wire:model.live="messageInputs.{{ $post->id }}" class="w-full rounded-lg border border-[#d9c08c] bg-white px-3 py-2 text-sm text-[#5f3f25] outline-none focus:border-[#7a8f3a] focus:ring-2 focus:ring-[#7a8f3a]/20" placeholder="Type your message to the guide...">
                                             <button type="button" wire:click="sendMessage({{ $post->id }})" class="rounded-lg bg-[#556b2f] px-3 py-2 text-xs font-semibold text-white hover:bg-[#465826]">Send</button>
                                         </div>
                                         @error('messageInputs.'.$post->id) <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
@@ -485,7 +496,7 @@
                     </div>
                 @else
                     <div class="rounded-2xl border border-dashed border-[#d4a563] bg-[#f4f6eb] p-8 text-center">
-                        <p class="text-sm text-slate-600">No posts yet. Share your first tour moment.</p>
+                        <p class="text-sm text-[#7a5532]">No posts yet. Share your first tour moment.</p>
                     </div>
                 @endif
             </div>

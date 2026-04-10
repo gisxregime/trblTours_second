@@ -269,6 +269,8 @@ it('creates a guide post with up to five previewable images', function () {
             UploadedFile::fake()->createWithContent('view-1.png', $pngBinary),
             UploadedFile::fake()->createWithContent('view-2.png', $pngBinary),
             UploadedFile::fake()->createWithContent('view-3.png', $pngBinary),
+            UploadedFile::fake()->createWithContent('view-4.png', $pngBinary),
+            UploadedFile::fake()->createWithContent('view-5.png', $pngBinary),
         ])
         ->call('createPost')
         ->assertHasNoErrors();
@@ -278,7 +280,7 @@ it('creates a guide post with up to five previewable images', function () {
     expect($post)->not->toBeNull()
         ->and((string) ($post->content ?? $post->caption ?? ''))->toContain('beautiful view')
         ->and(is_array($post->image_paths))->toBeTrue()
-        ->and(count($post->image_paths ?? []))->toBe(3)
+        ->and(count($post->image_paths ?? []))->toBe(5)
         ->and((int) ($post->likes_count ?? 0))->toBe(0);
 });
 

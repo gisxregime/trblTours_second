@@ -30,6 +30,11 @@ class GuideProfile extends Component
      */
     public array $postImages = [];
 
+    /**
+     * @var array<int, TemporaryUploadedFile>
+     */
+    public array $newPostImages = [];
+
     public ?int $editingPostId = null;
 
     public string $editingPostText = '';
@@ -44,11 +49,9 @@ class GuideProfile extends Component
      */
     public array $messageComposerOpen = [];
 
-    public function updated(string $propertyName): void
+    public function updatedNewPostImages(): void
     {
-        if ($propertyName === 'postImages' || str_starts_with($propertyName, 'postImages.')) {
-            $this->processPostImages();
-        }
+        $this->processNewPostImages();
     }
 
     public function render()
@@ -152,32 +155,47 @@ class GuideProfile extends Component
         $this->reset(['postText', 'postImages']);
     }
 
-    public function processPostImages(): void
+    public function processNewPostImages(): void
     {
+        $this->resetValidation('newPostImages');
+        $this->resetValidation('newPostImages.*');
         $this->resetValidation('postImages');
         $this->resetValidation('postImages.*');
 
+        $selectedPhotos = is_array($this->newPostImages)
+            ? $this->newPostImages
+            : [$this->newPostImages];
+
+        $incomingPhotos = collect($selectedPhotos)
+            ->filter(fn (mixed $photo): bool => $photo instanceof TemporaryUploadedFile || $photo instanceof UploadedFile)
+            ->values();
+
+        if ($incomingPhotos->isEmpty()) {
+            return;
+        }
+
         $this->postImages = collect($this->postImages)
+            ->merge($incomingPhotos)
             ->filter(fn (mixed $photo): bool => $photo instanceof TemporaryUploadedFile || $photo instanceof UploadedFile)
             ->take(5)
             ->values()
             ->all();
 
-        if ($this->postImages === []) {
-            return;
-        }
-
         $this->validateOnly('postImages.*', [
             'postImages.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
         ]);
+
+        $this->reset('newPostImages');
     }
 
     public function cancelPostDraft(): void
     {
         $this->resetValidation('postText');
+        $this->resetValidation('newPostImages');
+        $this->resetValidation('newPostImages.*');
         $this->resetValidation('postImages');
         $this->resetValidation('postImages.*');
-        $this->reset(['postText', 'postImages']);
+        $this->reset(['postText', 'postImages', 'newPostImages']);
     }
 
     public function removePostImage(int $index): void
