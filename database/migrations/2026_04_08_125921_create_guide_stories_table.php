@@ -17,9 +17,14 @@ return new class extends Migration
 
         Schema::create('guide_stories', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('guide_id')->constrained('users')->cascadeOnDelete();
+            $table->unsignedBigInteger('guide_id')->index();
             $table->string('image_path');
             $table->string('caption', 280)->nullable();
+            $table->text('content')->nullable();
+            $table->json('image_paths')->nullable();
+            $table->unsignedInteger('likes_count')->default(0);
+            $table->json('liked_by')->nullable();
+            $table->json('messages')->nullable();
             $table->timestamp('expires_at');
             $table->timestamps();
 
