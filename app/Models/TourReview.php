@@ -2,11 +2,16 @@
 
 namespace App\Models;
 
+use Database\Factories\TourReviewFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class TourReview extends Model
 {
+    /** @use HasFactory<TourReviewFactory> */
+    use HasFactory;
+
     /**
      * @var list<string>
      */

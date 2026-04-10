@@ -4,12 +4,14 @@ namespace App\Livewire\Guide;
 
 use App\Models\Booking;
 use App\Models\Tour;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
@@ -50,6 +52,21 @@ class GuideTours extends Component
     public function mount(): void
     {
         $this->resetForm();
+
+        $editTourId = request()->integer('edit');
+        if ($editTourId <= 0) {
+            return;
+        }
+
+        $tourExists = $this->getGuideToursQuery($this->guideId())
+            ->whereKey($editTourId)
+            ->exists();
+
+        if (! $tourExists) {
+            return;
+        }
+
+        $this->edit($editTourId);
     }
 
     public function save(): void
@@ -201,7 +218,7 @@ class GuideTours extends Component
             $selected[] = $option;
         }
 
-        $this->form['transportation'] = $selected;
+        $this->form = array_merge($this->form, ['transportation' => $selected]);
     }
 
     public function render()
@@ -332,7 +349,7 @@ class GuideTours extends Component
         ];
 
         if (Schema::hasColumn('tours', 'short_description')) {
-            $payload['short_description'] = $form['summary'];
+            $payload['short_description'] = $this->shortDescriptionForSummary((string) $form['summary']);
         }
 
         return $payload;
@@ -348,22 +365,55 @@ class GuideTours extends Component
             ->values()
             ->all();
 
+        if ($transportation === [] && is_string($tour->category) && trim($tour->category) !== '') {
+            $transportation = collect(explode(',', $tour->category))
+                ->map(fn (string $value): string => trim($value))
+                ->filter(fn (string $value): bool => $value !== '')
+                ->values()
+                ->all();
+        }
+
+        $attributes = (array) $tour->getAttributes();
+        $city = $this->firstFilledValue($attributes, ['city', 'city_municipality', 'municipality', 'location']);
+        if ($city === '') {
+            $city = $this->resolveGuideDefaultCity((int) ($tour->guide_id ?? $tour->created_by ?? $this->guideId()));
+        }
+        $durationLabel = (string) ($tour->duration_label ?? $tour->duration ?? '');
+        $durationHours = $tour->duration_hours;
+
+        if ($durationHours === null || $durationHours === '') {
+            $durationHours = $this->extractFirstInteger($durationLabel);
+        }
+
+        $durationUnit = (string) ($tour->duration_unit ?? '');
+        if ($durationUnit === '') {
+            $durationUnit = str_contains(strtolower($durationLabel), 'day') ? 'days' : 'hours';
+        }
+
+        $guestRange = $this->normalizedGuestRange($tour);
+        $availableOn = $this->normalizeDateValue($tour->available_on);
+        if ($availableOn === '') {
+            $availableOn = $this->normalizeDateValue($attributes['created_at'] ?? null);
+        }
+
+        $status = $this->normalizeStatusValue($tour->status ?? $attributes['tour_status'] ?? null);
+
         return [
             'title' => (string) ($tour->title ?? $tour->name ?? ''),
             'region' => (string) $tour->region,
-            'city' => (string) ($tour->city ?? ''),
+            'city' => $city,
             'summary' => (string) ($tour->summary ?? $tour->description ?? ''),
-            'duration_label' => (string) ($tour->duration_label ?? $tour->duration ?? ''),
-            'duration_hours' => (string) ($tour->duration_hours ?? ''),
-            'duration_unit' => (string) ($tour->duration_unit ?? 'hours'),
-            'min_guests' => (string) ($tour->min_guests ?? ''),
-            'max_guests' => (string) ($tour->max_guests ?? ''),
+            'duration_label' => $durationLabel,
+            'duration_hours' => (string) ($durationHours ?? ''),
+            'duration_unit' => $durationUnit,
+            'min_guests' => $guestRange['min_guests'],
+            'max_guests' => $guestRange['max_guests'],
             'transportation' => $transportation,
             'price_per_person' => (string) ($tour->price_per_person ?? $tour->price ?? ''),
             'currency' => 'PHP',
             'price_unit' => 'person',
-            'available_on' => (string) ($tour->available_on ?? ''),
-            'status' => (string) ($tour->status ?? 'draft'),
+            'available_on' => $availableOn,
+            'status' => $status,
         ];
     }
 
@@ -394,6 +444,99 @@ class GuideTours extends Component
         $this->tourPhotos = [];
         $this->existingGalleryImages = [];
         $this->resetForm();
+    }
+
+    private function normalizeDateValue(mixed $value): string
+    {
+        if ($value instanceof \DateTimeInterface) {
+            return $value->format('Y-m-d');
+        }
+
+        if (is_string($value) && trim($value) !== '') {
+            $normalized = trim($value);
+
+            foreach (['Y-m-d', 'Y/m/d', 'm/d/Y', 'n/j/Y', 'm-d-Y', 'n-j-Y', 'Y-m-d H:i:s', 'Y/m/d H:i:s'] as $format) {
+                try {
+                    $date = Carbon::createFromFormat($format, $normalized);
+
+                    if ($date !== false) {
+                        return $date->format('Y-m-d');
+                    }
+                } catch (\Throwable) {
+                    continue;
+                }
+            }
+
+            try {
+                return Carbon::parse($normalized)->format('Y-m-d');
+            } catch (\Throwable) {
+                return '';
+            }
+        }
+
+        return '';
+    }
+
+    private function normalizeStatusValue(mixed $value): string
+    {
+        if (! is_string($value) || trim($value) === '') {
+            return 'draft';
+        }
+
+        $normalized = strtolower(trim($value));
+        $normalized = str_replace([' ', '-'], '_', $normalized);
+
+        return in_array($normalized, ['draft', 'pending_review', 'active', 'paused'], true)
+            ? $normalized
+            : 'draft';
+    }
+
+    private function shortDescriptionForSummary(string $summary): string
+    {
+        return Str::limit(trim($summary), 255, '');
+    }
+
+    private function resolveGuideDefaultCity(int $guideId): string
+    {
+        if (! Schema::hasTable('tour_guides_profile')) {
+            return '';
+        }
+
+        $profile = (array) (DB::table('tour_guides_profile')->where('user_id', $guideId)->first() ?? []);
+
+        return $this->firstFilledValue($profile, ['city_municipality', 'city', 'municipality']);
+    }
+
+    private function extractFirstInteger(string $value): string
+    {
+        if (preg_match('/\d+/', $value, $matches) !== 1) {
+            return '';
+        }
+
+        return (string) ((int) $matches[0]);
+    }
+
+    /**
+     * @return array{min_guests: string, max_guests: string}
+     */
+    private function normalizedGuestRange(Tour $tour): array
+    {
+        $minGuests = (string) ($tour->min_guests ?? '');
+        $maxGuests = (string) ($tour->max_guests ?? '');
+
+        if ($minGuests === '' && $maxGuests === '') {
+            $groupSize = $this->firstFilledValue((array) $tour->getAttributes(), ['group_size', 'max_people']);
+
+            if ($groupSize !== '') {
+                $minGuests = $groupSize;
+                $maxGuests = $groupSize;
+            }
+        }
+
+        return [
+            'min_guests' => $minGuests,
+            'max_guests' => $maxGuests,
+        ];
     }
 
     /**
