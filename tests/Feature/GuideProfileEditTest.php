@@ -1,8 +1,10 @@
 <?php
 
+use App\Models\Tour;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 
 use function Pest\Laravel\actingAs;
@@ -48,10 +50,74 @@ it('shows the facebook-style guide profile page', function () {
     actingAs($user)
         ->get(route('dashboard.guide.profile.show'))
         ->assertSuccessful()
+        ->assertSee('Your Guide Profile')
         ->assertSee('Guide Profile')
         ->assertSee('Guide Maria')
         ->assertSee('Cebu City')
-        ->assertSee('About');
+        ->assertSee('My Tours');
+});
+
+it('shows updated tour card values on the guide profile page', function () {
+    $user = User::factory()->create([
+        'role' => 'guide',
+        'name' => 'Maria Santos',
+        'display_name' => 'Guide Maria',
+        'region' => 'Central Visayas',
+    ]);
+
+    DB::table('tour_guides_profile')->insert([
+        'user_id' => $user->id,
+        'phone_number' => '0912-345-6789',
+        'nationality' => 'Filipino',
+        'date_of_birth' => '1990-01-01',
+        'years_of_experience' => 4,
+        'bio' => str_repeat('Helping travelers discover local gems. ', 4),
+        'government_id_type' => 'national_id',
+        'government_id_number' => 'GUIDE-12345',
+        'nbi_clearance_number' => 'NBI-12345',
+        'city_municipality' => 'Cebu City',
+        'barangay' => 'Lahug',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $tourPayload = [
+        'guide_id' => $user->id,
+        'created_by' => $user->id,
+        'title' => 'Coron Lagoon Explorer',
+        'name' => 'Coron Lagoon Explorer',
+        'region' => 'Palawan',
+        'city' => 'Coron',
+        'summary' => 'A calm lagoon trip with island stops.',
+        'description' => 'A calm lagoon trip with island stops.',
+        'duration_label' => '4 hours',
+        'duration_hours' => 4,
+        'duration_unit' => 'hours',
+        'min_guests' => 2,
+        'max_guests' => 6,
+        'price_per_person' => 2400,
+        'price' => 2400,
+        'price_unit' => 'person',
+        'available_on' => '2026-04-18',
+        'activities' => json_encode(['boat_bangka', 'walking_tour']),
+        'status' => 'active',
+    ];
+
+    Tour::query()->create(
+        collect($tourPayload)
+            ->filter(fn (mixed $value, string $column): bool => Schema::hasColumn('tours', $column))
+            ->all()
+    );
+
+    actingAs($user)
+        ->get(route('dashboard.guide.profile.show'))
+        ->assertSuccessful()
+        ->assertSee('Coron Lagoon Explorer')
+        ->assertSee('Coron')
+        ->assertSee('4 hours')
+        ->assertSee('2 - 6 guests')
+        ->assertSee('Active')
+        ->assertSee('Apr 18, 2026');
 });
 
 it('updates guide profile via ajax and returns json', function () {

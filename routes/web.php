@@ -3,6 +3,7 @@
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\GuideProfileController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PublicGuideProfileController;
 use App\Livewire\Guide\GuideAvailabilityManager;
 use App\Livewire\Guide\GuideBookingRequests;
 use App\Livewire\Guide\GuideDashboard;
@@ -81,6 +82,9 @@ Route::get('/', function (Request $request) {
         ],
     ]);
 });
+
+// Public guide profile page
+Route::get('/guide/{guide}', [PublicGuideProfileController::class, 'show'])->name('guide.profile');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'redirect'])->name('dashboard');

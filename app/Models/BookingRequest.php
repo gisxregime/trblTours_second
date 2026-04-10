@@ -2,12 +2,17 @@
 
 namespace App\Models;
 
+use Database\Factories\BookingRequestFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class BookingRequest extends Model
 {
+    /** @use HasFactory<BookingRequestFactory> */
+    use HasFactory;
+
     /**
      * @var list<string>
      */

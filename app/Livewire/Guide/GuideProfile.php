@@ -4,6 +4,8 @@ namespace App\Livewire\Guide;
 
 use App\Models\Booking;
 use App\Models\BookingRequest;
+use App\Models\GuideStory;
+use App\Models\Tour;
 use App\Models\TourReview;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -42,6 +44,25 @@ class GuideProfile extends Component
             ? round((float) TourReview::query()->where('guide_id', $user->id)->avg('rating'), 1)
             : 0.0;
 
+        // Load guide's posts (stories) when the table exists.
+        $posts = Schema::hasTable((new GuideStory)->getTable())
+            ? $user->guideStories()->orderByDesc('created_at')->get()
+            : collect();
+
+        // Load guide's own tours so the dashboard reflects every update immediately.
+        $toursQuery = Tour::query()->where('guide_id', $user->id);
+
+        $tours = $toursQuery->orderByDesc('created_at')->get();
+
+        // Calculate statistics
+        $stats = [
+            'totalToursCompleted' => $completedBookings,
+            'totalReviews' => Schema::hasTable('tour_reviews')
+                ? TourReview::where('guide_id', $user->id)->count()
+                : 0,
+            'averageRating' => $averageRating,
+        ];
+
         return view('livewire.guide.guide-profile', [
             'guide' => [
                 'full_name' => $user->name,
@@ -61,6 +82,9 @@ class GuideProfile extends Component
             'averageRating' => $averageRating,
             'documentStatus' => (string) ($profile['approval_status'] ?? 'pending'),
             'verificationStatus' => $this->verificationStatus($profile),
+            'posts' => $posts,
+            'tours' => $tours,
+            'stats' => $stats,
         ]);
     }
 
