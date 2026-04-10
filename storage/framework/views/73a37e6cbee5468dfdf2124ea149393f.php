@@ -88,16 +88,20 @@
             ->values()
             ->all();
 
+        $transportationSummary = collect($transportationItems)
+            ->map(fn (string $item): string => str_replace('_', ' ', ucwords($item, '_')))
+            ->implode(', ');
+
         return [
             'id' => $tour->id,
             'title' => (string) ($tour->name ?? $tour->title ?? 'Untitled tour'),
             'description' => (string) ($tour->description ?? $tour->short_description ?? $tour->summary ?? 'No full description provided.'),
             'summary' => (string) ($tour->short_description ?? $tour->summary ?? ''),
-            'generated_summary' => trim(implode(' ', array_filter([
+            'generated_summary' => implode('<br>', array_values(array_filter([
                 (($tour->price ?? $tour->price_per_person ?? 0) > 0)
                     ? 'Php '.number_format((float) ($tour->price ?? $tour->price_per_person), 2).' per '.((string) ($tour->price_unit ?? 'person'))
                     : null,
-                $transportationItems !== [] ? 'Transportation: '.implode(', ', $transportationItems) : null,
+                $transportationItems !== [] ? 'Transportation: '.$transportationSummary : null,
                 $availableOn !== 'Not specified' ? 'Date: '.$availableOn : null,
                 ($minGuests > 0 || $maxGuests > 0)
                     ? (($minGuests ?: 1).' - '.($maxGuests ?: ($minGuests ?: 1)).' guests')
@@ -388,7 +392,8 @@
 
                 <div class="rounded-lg border border-[#e2c08c] p-4">
                     <p class="text-xs uppercase tracking-wide text-slate-500">Summary</p>
-                    <p class="mt-2 text-sm leading-6 text-slate-700" x-text="selectedTour?.generated_summary || selectedTour?.summary || 'Not specified'"></p>
+                    <p class="mt-2 text-sm leading-6 text-slate-700" x-show="selectedTour?.generated_summary" x-html="selectedTour?.generated_summary"></p>
+                    <p class="mt-2 text-sm leading-6 text-slate-700" x-show="!selectedTour?.generated_summary" x-text="selectedTour?.summary || 'Not specified'"></p>
                 </div>
 
                 <div class="rounded-lg border border-[#e2c08c] p-4">
