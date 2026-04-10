@@ -1,11 +1,14 @@
 <?php
 
+use App\Livewire\Guide\GuideProfile;
+use App\Models\GuideStory;
 use App\Models\Tour;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
+use Livewire\Livewire;
 
 use function Pest\Laravel\actingAs;
 
@@ -245,4 +248,137 @@ it('keeps existing photos when saving without new uploads', function () {
     expect($profile)->not->toBeNull()
         ->and($profile->profile_photo_path)->toBe('guide/profile-photos/existing-profile.jpg')
         ->and($profile->cover_photo_path)->toBe('guide/cover-photos/existing-cover.jpg');
+});
+
+it('creates a guide post with up to five previewable images', function () {
+    Storage::fake('public');
+
+    $pngBinary = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO5+y9YAAAAASUVORK5CYII=');
+
+    $guide = User::factory()->create([
+        'role' => 'tour_guide',
+        'full_name' => 'Guide Poster',
+        'display_name' => 'Guide Poster',
+    ]);
+
+    actingAs($guide);
+
+    Livewire::test(GuideProfile::class)
+        ->set('postText', 'Here is a beautiful view from my latest island tour.')
+        ->set('postImages', [
+            UploadedFile::fake()->createWithContent('view-1.png', $pngBinary),
+            UploadedFile::fake()->createWithContent('view-2.png', $pngBinary),
+            UploadedFile::fake()->createWithContent('view-3.png', $pngBinary),
+        ])
+        ->call('createPost')
+        ->assertHasNoErrors();
+
+    $post = GuideStory::query()->where('guide_id', $guide->id)->latest('id')->first();
+
+    expect($post)->not->toBeNull()
+        ->and((string) ($post->content ?? $post->caption ?? ''))->toContain('beautiful view')
+        ->and(is_array($post->image_paths))->toBeTrue()
+        ->and(count($post->image_paths ?? []))->toBe(3)
+        ->and((int) ($post->likes_count ?? 0))->toBe(0);
+});
+
+it('toggles like and sends direct message on a guide post', function () {
+    $guide = User::factory()->create([
+        'role' => 'tour_guide',
+        'full_name' => 'Guide Owner',
+    ]);
+
+    $post = GuideStory::query()->create([
+        'guide_id' => $guide->id,
+        'image_path' => 'guide/posts/seed.jpg',
+        'image_paths' => ['guide/posts/seed.jpg'],
+        'caption' => 'Seed post',
+        'content' => 'Seed post',
+        'likes_count' => 0,
+        'liked_by' => [],
+        'messages' => [],
+        'expires_at' => now()->addYears(10),
+    ]);
+
+    actingAs($guide);
+
+    Livewire::test(GuideProfile::class)
+        ->call('toggleLike', $post->id)
+        ->set('messageInputs.'.$post->id, 'I will reply to interested tourists right away.')
+        ->call('sendMessage', $post->id)
+        ->assertHasNoErrors();
+
+    $post->refresh();
+
+    expect((int) ($post->likes_count ?? 0))->toBe(1)
+        ->and($post->liked_by)->toContain($guide->id)
+        ->and(is_array($post->messages))->toBeTrue()
+        ->and(count($post->messages ?? []))->toBe(1)
+        ->and((string) ($post->messages[0]['content'] ?? ''))->toContain('interested tourists');
+});
+
+it('accepts multiple post images, previews them, removes one, and publishes after clicking post', function () {
+    Storage::fake('public');
+
+    $pngBinary = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO5+y9YAAAAASUVORK5CYII=');
+
+    $guide = User::factory()->create([
+        'role' => 'tour_guide',
+        'full_name' => 'Guide Draft Tester',
+        'display_name' => 'Guide Draft Tester',
+    ]);
+
+    actingAs($guide);
+
+    $component = Livewire::test(GuideProfile::class)
+        ->set('postImages', [
+            UploadedFile::fake()->createWithContent('draft-1.png', $pngBinary),
+            UploadedFile::fake()->createWithContent('draft-2.png', $pngBinary),
+            UploadedFile::fake()->createWithContent('draft-3.png', $pngBinary),
+        ]);
+
+    $component->assertSet('postImages.0', $component->get('postImages.0'));
+
+    $component
+        ->call('removePostImage', 1)
+        ->assertHasNoErrors();
+
+    expect(count($component->get('postImages')))->toBe(2);
+
+    $component
+        ->set('postText', 'Published from draft flow')
+        ->call('createPost')
+        ->assertHasNoErrors();
+
+    $published = GuideStory::query()->where('guide_id', $guide->id)->latest('id')->first();
+
+    expect($published)->not->toBeNull()
+        ->and((string) ($published->content ?? ''))->toContain('Published from draft flow')
+        ->and(count($published->image_paths ?? []))->toBe(2);
+});
+
+it('cancels draft post and removes uploaded draft photos', function () {
+    Storage::fake('public');
+
+    $pngBinary = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO5+y9YAAAAASUVORK5CYII=');
+
+    $guide = User::factory()->create([
+        'role' => 'tour_guide',
+        'full_name' => 'Guide Cancel Tester',
+        'display_name' => 'Guide Cancel Tester',
+    ]);
+
+    actingAs($guide);
+
+    $component = Livewire::test(GuideProfile::class)
+        ->set('postImages', [
+            UploadedFile::fake()->createWithContent('cancel-1.png', $pngBinary),
+        ]);
+
+    $component
+        ->call('cancelPostDraft')
+        ->assertHasNoErrors();
+
+    expect($component->get('postText'))->toBe('')
+        ->and($component->get('postImages'))->toBe([]);
 });

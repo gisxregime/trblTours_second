@@ -120,6 +120,68 @@
             'images' => $images,
         ];
     })->values();
+
+    $postFeed = $posts->map(function ($post) use ($guide) {
+        $rawPostImages = [];
+        $likedBy = [];
+        $messages = [];
+
+        if (is_array($post->image_paths)) {
+            $rawPostImages = collect($post->image_paths)
+                ->filter(fn (mixed $value): bool => is_string($value) && trim($value) !== '')
+                ->values()
+                ->all();
+        } elseif (is_string($post->image_paths) && trim($post->image_paths) !== '') {
+            $decodedImagePaths = json_decode($post->image_paths, true);
+
+            if (is_array($decodedImagePaths)) {
+                $rawPostImages = collect($decodedImagePaths)
+                    ->filter(fn (mixed $value): bool => is_string($value) && trim($value) !== '')
+                    ->values()
+                    ->all();
+            }
+        }
+
+        if ($rawPostImages === [] && is_string($post->image_path) && trim($post->image_path) !== '') {
+            $rawPostImages[] = trim($post->image_path);
+        }
+
+        if (is_array($post->liked_by)) {
+            $likedBy = array_values($post->liked_by);
+        } elseif (is_string($post->liked_by) && trim($post->liked_by) !== '') {
+            $decodedLikedBy = json_decode($post->liked_by, true);
+            if (is_array($decodedLikedBy)) {
+                $likedBy = array_values($decodedLikedBy);
+            }
+        }
+
+        if (is_array($post->messages)) {
+            $messages = array_values($post->messages);
+        } elseif (is_string($post->messages) && trim($post->messages) !== '') {
+            $decodedMessages = json_decode($post->messages, true);
+            if (is_array($decodedMessages)) {
+                $messages = array_values($decodedMessages);
+            }
+        }
+
+        $resolvedImages = collect($rawPostImages)
+            ->map(fn (string $path): string => Illuminate\Support\Str::startsWith($path, ['http://', 'https://']) ? $path : asset('storage/'.$path))
+            ->take(5)
+            ->values()
+            ->all();
+
+        return [
+            'id' => (int) $post->id,
+            'text' => (string) ($post->content ?? $post->caption ?? ''),
+            'images' => $resolvedImages,
+            'likes_count' => max((int) ($post->likes_count ?? count($likedBy)), 0),
+            'messages_count' => count($messages),
+            'liked_by_current_user' => in_array((int) auth()->id(), $likedBy, true),
+            'created_at_human' => $post->created_at?->diffForHumans() ?? 'Just now',
+            'guide_name' => (string) ($guide['display_name'] ?? $guide['full_name'] ?? 'Guide'),
+            'guide_avatar' => ($guide['profile_photo_path'] ?? '') !== '' ? asset('storage/'.$guide['profile_photo_path']) : null,
+        ];
+    })->values();
 @endphp
 
 <div
@@ -127,15 +189,40 @@
     x-data="{
         activeTab: 'posts',
         tourPreviews: @js($tourPreviews),
+        postFeed: @js($postFeed),
         selectedTour: null,
+        postLightboxImages: [],
+        postLightboxIndex: null,
         openTourPreview(tourId) {
             this.selectedTour = this.tourPreviews.find((tour) => Number(tour.id) === Number(tourId)) ?? null;
         },
         closeTourPreview() {
             this.selectedTour = null;
+        },
+        openPostLightbox(images, index) {
+            this.postLightboxImages = images;
+            this.postLightboxIndex = index;
+        },
+        closePostLightbox() {
+            this.postLightboxImages = [];
+            this.postLightboxIndex = null;
+        },
+        nextPostImage() {
+            if (this.postLightboxImages.length === 0 || this.postLightboxIndex === null) {
+                return;
+            }
+
+            this.postLightboxIndex = (this.postLightboxIndex + 1) % this.postLightboxImages.length;
+        },
+        previousPostImage() {
+            if (this.postLightboxImages.length === 0 || this.postLightboxIndex === null) {
+                return;
+            }
+
+            this.postLightboxIndex = (this.postLightboxIndex - 1 + this.postLightboxImages.length) % this.postLightboxImages.length;
         }
     }"
-    @keydown.escape.window="closeTourPreview()"
+    @keydown.escape.window="closeTourPreview(); closePostLightbox();"
 >
     <section class="mx-auto w-full max-w-6xl px-4 pt-6 sm:px-6 lg:px-8">
         <div class="mb-4 rounded-lg border border-[#d4a563] bg-white px-6 py-4 shadow-sm">
@@ -231,34 +318,174 @@
             </div>
 
             <div class="p-6" x-show="activeTab === 'posts'" x-cloak>
+                <form wire:submit.prevent="createPost" class="mb-6 rounded-2xl border border-[#d4a563] bg-white p-5 shadow-sm">
+                    <h4 class="text-base font-semibold text-[#556b2f]">Create Post</h4>
+
+                    <div class="mt-4 space-y-3">
+                        <textarea
+                            wire:model.live="postText"
+                            rows="4"
+                            class="w-full rounded-xl border border-[#d9c08c] bg-[#fffef8] px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-[#7a8f3a] focus:ring-2 focus:ring-[#7a8f3a]/20"
+                            placeholder="Share your latest tour experience..."
+                        ></textarea>
+                        @error('postText') <p class="text-xs text-rose-600">{{ $message }}</p> @enderror
+
+                        <div>
+                            <label class="mb-1 block text-sm font-medium text-slate-700" for="post_images">Upload Photos</label>
+                            <input
+                                id="post_images"
+                                wire:model="postImages"
+                                type="file"
+                                accept="image/*"
+                                multiple
+                                class="block w-full text-sm text-slate-700 file:mr-3 file:rounded-lg file:border-0 file:bg-[#7a8730] file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-[#697629]"
+                            >
+                        </div>
+                        <p class="text-xs text-slate-500">Upload up to 5 images for post preview.</p>
+                        <div wire:loading wire:target="postImages" class="text-xs text-[#6c792a]">Uploading photos...</div>
+                        @error('postImages') <p class="text-xs text-rose-600">{{ $message }}</p> @enderror
+                        @error('postImages.*') <p class="text-xs text-rose-600">{{ $message }}</p> @enderror
+
+                        @php
+                            $hasNewPostPhotos = is_array($postImages ?? null) && count($postImages) > 0;
+                        @endphp
+
+                        <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
+                            @if ($hasNewPostPhotos)
+                                @foreach ($postImages as $index => $photo)
+                                    <div wire:key="post-preview-{{ $index }}" class="relative h-28 overflow-hidden rounded-lg border border-[#d4a563]/40 bg-[#f4f6eb]">
+                                        <img src="{{ $photo->temporaryUrl() }}" alt="Post upload preview" class="h-full w-full object-cover">
+                                        <button
+                                            type="button"
+                                            wire:click="removePostImage({{ $index }})"
+                                            class="absolute right-1 top-1 inline-flex h-6 w-6 items-center justify-center rounded-full bg-black/65 text-xs font-bold text-white transition hover:bg-black"
+                                            aria-label="Remove photo"
+                                        >
+                                            ×
+                                        </button>
+                                    </div>
+                                @endforeach
+                            @else
+                                <div class="col-span-2 rounded-xl border border-dashed border-[#d4a563]/40 bg-white px-4 py-5 text-center text-xs text-slate-500 sm:col-span-3 md:col-span-5">
+                                    No photos uploaded yet.
+                                </div>
+                            @endif
+                        </div>
+
+                        <div class="flex items-center gap-3">
+                            <button
+                                type="submit"
+                                wire:loading.attr="disabled"
+                                wire:target="createPost,postImages,cancelPostDraft,removePostImage"
+                                class="inline-flex items-center rounded-lg bg-[#556b2f] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#465826] disabled:cursor-not-allowed disabled:opacity-60"
+                                @disabled(trim($postText) === '' || ! $hasNewPostPhotos)
+                            >
+                                <span wire:loading.remove wire:target="createPost">Post</span>
+                                <span wire:loading wire:target="createPost">Posting...</span>
+                            </button>
+                            <button
+                                type="button"
+                                wire:click="cancelPostDraft"
+                                wire:loading.attr="disabled"
+                                wire:target="createPost,postImages,cancelPostDraft,removePostImage"
+                                class="inline-flex items-center rounded-lg border border-[#d4a563] bg-white px-4 py-2 text-sm font-semibold text-[#7a5532] transition hover:bg-[#fff7ec]"
+                            >
+                                Cancel
+                            </button>
+                            <span class="text-xs text-slate-500">JPG, PNG, WebP only</span>
+                        </div>
+                    </div>
+                </form>
+
                 @if ($posts->isNotEmpty())
-                    <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                    <div class="space-y-5">
                         @foreach ($posts as $post)
                             @php
-                                $postImagePath = (string) ($post->image_path ?? '');
-                                $postImageSrc = Illuminate\Support\Str::startsWith($postImagePath, ['http://', 'https://'])
-                                    ? $postImagePath
-                                    : asset('storage/'.$postImagePath);
+                                $postCard = $postFeed->firstWhere('id', (int) $post->id);
+                                $postCardImages = $postCard['images'] ?? [];
+                                $postLiked = (bool) ($postCard['liked_by_current_user'] ?? false);
                             @endphp
+                            <article wire:key="guide-post-{{ $post->id }}" class="rounded-2xl border border-[#d4a563]/80 bg-white shadow-[0_8px_24px_-16px_rgba(85,107,47,0.6)]">
+                                <div class="flex items-start justify-between gap-4 px-5 py-4">
+                                    <div class="flex items-center gap-3">
+                                        <div class="h-11 w-11 overflow-hidden rounded-full border border-[#d4a563]/60 bg-[#eef2df]">
+                                            @if (($postCard['guide_avatar'] ?? null) !== null)
+                                                <img src="{{ $postCard['guide_avatar'] }}" alt="Guide avatar" class="h-full w-full object-cover">
+                                            @else
+                                                <div class="flex h-full w-full items-center justify-center text-sm font-semibold text-[#556b2f]">
+                                                    {{ strtoupper(substr($guide['display_name'] ?? 'G', 0, 1)) }}
+                                                </div>
+                                            @endif
+                                        </div>
+                                        <div>
+                                            <p class="text-sm font-semibold text-slate-900">{{ $postCard['guide_name'] ?? ($guide['display_name'] ?? 'Guide') }}</p>
+                                            <p class="text-xs text-slate-500">{{ $postCard['created_at_human'] ?? 'Just now' }}</p>
+                                        </div>
+                                    </div>
 
-                            <article class="overflow-hidden rounded-[18px] border border-[#e9d7b6] bg-white shadow-sm transition hover:shadow-md" role="presentation">
-                                <div class="h-44 w-full bg-[#eef2df]">
-                                    @if ($postImagePath !== '')
-                                        <img src="{{ $postImageSrc }}" alt="Guide story image" class="h-full w-full object-cover">
+                                    <div class="relative" x-data="{ openMenu: false }">
+                                        <button type="button" @click="openMenu = !openMenu" class="rounded-full p-2 text-slate-500 transition hover:bg-[#fff7ec] hover:text-[#7a5532]">⋮</button>
+                                        <div x-show="openMenu" x-cloak @click.away="openMenu = false" class="absolute right-0 z-20 mt-1 w-32 rounded-lg border border-[#d4a563]/60 bg-white p-1 shadow-lg">
+                                            <button type="button" class="w-full rounded-md px-3 py-2 text-left text-xs font-medium text-[#556b2f] hover:bg-[#f4f6eb]" wire:click="startEditingPost({{ $post->id }})">Edit</button>
+                                            <button type="button" class="w-full rounded-md px-3 py-2 text-left text-xs font-medium text-rose-600 hover:bg-rose-50" wire:click="deletePost({{ $post->id }})" onclick="return confirm('Delete this post?')">Delete</button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="px-5 pb-4">
+                                    @if ($editingPostId === (int) $post->id)
+                                        <textarea wire:model.live="editingPostText" rows="3" class="w-full rounded-xl border border-[#d9c08c] bg-[#fffef8] px-3 py-2 text-sm text-slate-700 outline-none focus:border-[#7a8f3a] focus:ring-2 focus:ring-[#7a8f3a]/20"></textarea>
+                                        @error('editingPostText') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
+                                        <div class="mt-2 flex items-center gap-2">
+                                            <button type="button" wire:click="updatePost" class="rounded-lg bg-[#556b2f] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#465826]">Save</button>
+                                            <button type="button" wire:click="cancelEditingPost" class="rounded-lg border border-[#d4a563] px-3 py-1.5 text-xs font-semibold text-[#7a5532] hover:bg-[#fff7ec]">Cancel</button>
+                                        </div>
                                     @else
-                                        <div class="flex h-full w-full items-center justify-center text-sm font-medium text-[#556b2f]">No image</div>
+                                        <p class="text-sm leading-6 text-slate-700">{{ $postCard['text'] ?? 'No message provided.' }}</p>
                                     @endif
                                 </div>
-                                <div class="p-4">
-                                    <p class="text-sm leading-6 text-slate-700">{{ $post->caption ?: 'No caption provided.' }}</p>
-                                    <p class="mt-3 text-xs text-slate-500">{{ $post->created_at?->diffForHumans() }}</p>
+
+                                @if ($postCardImages !== [])
+                                    <div class="grid gap-1 px-5 pb-4 {{ count($postCardImages) === 1 ? 'grid-cols-1' : 'grid-cols-2' }}">
+                                        @foreach ($postCardImages as $imageIndex => $imageUrl)
+                                            <button type="button" wire:key="post-image-{{ $post->id }}-{{ $imageIndex }}" class="overflow-hidden rounded-xl border border-[#e8d3aa] bg-[#f4f6eb] {{ count($postCardImages) === 1 ? 'h-72' : 'h-44' }}" @click="openPostLightbox(@js($postCardImages), {{ $imageIndex }})">
+                                                <img src="{{ $imageUrl }}" alt="Post image" class="h-full w-full object-cover">
+                                            </button>
+                                        @endforeach
+                                    </div>
+                                @endif
+
+                                <div class="border-t border-[#ead2ad] px-5 py-3">
+                                    <div class="flex items-center justify-between text-xs text-slate-500">
+                                        <p>❤️ {{ $postCard['likes_count'] ?? 0 }}</p>
+                                        <p>💬 {{ $postCard['messages_count'] ?? 0 }} messages</p>
+                                    </div>
+
+                                    <div class="mt-3 grid grid-cols-2 gap-2 border-t border-[#f1e2c8] pt-3">
+                                        <button type="button" wire:click="toggleLike({{ $post->id }})" class="inline-flex items-center justify-center gap-1 rounded-lg px-3 py-2 text-sm font-semibold transition {{ $postLiked ? 'bg-rose-50 text-rose-600' : 'bg-[#f8f3e7] text-[#7a5532] hover:bg-[#f1e8d5]' }}">
+                                            <span>{{ $postLiked ? '❤️' : '🤍' }}</span>
+                                            <span>Like</span>
+                                        </button>
+                                        <button type="button" wire:click="toggleMessageComposer({{ $post->id }})" class="inline-flex items-center justify-center gap-1 rounded-lg bg-[#f8f3e7] px-3 py-2 text-sm font-semibold text-[#556b2f] transition hover:bg-[#eaf0d6]">
+                                            <span>💬</span>
+                                            <span>Message</span>
+                                        </button>
+                                    </div>
+
+                                    @if ($messageComposerOpen[$post->id] ?? false)
+                                        <div class="mt-3 flex items-center gap-2">
+                                            <input type="text" wire:model.live="messageInputs.{{ $post->id }}" class="w-full rounded-lg border border-[#d9c08c] bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-[#7a8f3a] focus:ring-2 focus:ring-[#7a8f3a]/20" placeholder="Type your message to the guide...">
+                                            <button type="button" wire:click="sendMessage({{ $post->id }})" class="rounded-lg bg-[#556b2f] px-3 py-2 text-xs font-semibold text-white hover:bg-[#465826]">Send</button>
+                                        </div>
+                                        @error('messageInputs.'.$post->id) <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
+                                    @endif
                                 </div>
                             </article>
                         @endforeach
                     </div>
                 @else
-                    <div class="rounded-lg border border-dashed border-[#d4a563] bg-[#f4f6eb] p-8 text-center">
-                        <p class="text-sm text-slate-600">You do not have any posts yet.</p>
+                    <div class="rounded-2xl border border-dashed border-[#d4a563] bg-[#f4f6eb] p-8 text-center">
+                        <p class="text-sm text-slate-600">No posts yet. Share your first tour moment.</p>
                     </div>
                 @endif
             </div>
@@ -393,6 +620,22 @@
                     <p class="text-xs uppercase tracking-wide text-slate-500">Full Description</p>
                     <p class="mt-2 whitespace-pre-line text-sm leading-6 text-slate-700" x-text="selectedTour?.description"></p>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <div x-show="postLightboxIndex !== null" x-cloak class="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-4" @click.self="closePostLightbox()">
+        <div class="relative w-full max-w-5xl">
+            <button type="button" class="absolute right-0 top-0 z-10 rounded-full bg-white/20 px-3 py-1 text-sm font-semibold text-white backdrop-blur hover:bg-white/30" @click="closePostLightbox()">Close</button>
+
+            <div class="overflow-hidden rounded-2xl border border-white/20 bg-black/30">
+                <img :src="postLightboxImages[postLightboxIndex]" alt="Post image preview" class="max-h-[80vh] w-full object-contain">
+            </div>
+
+            <div class="mt-3 flex items-center justify-between">
+                <button type="button" class="rounded-lg bg-white/20 px-3 py-2 text-sm font-semibold text-white hover:bg-white/30" @click="previousPostImage()">Prev</button>
+                <p class="text-xs text-white" x-text="postLightboxIndex !== null ? `${postLightboxIndex + 1} / ${postLightboxImages.length}` : ''"></p>
+                <button type="button" class="rounded-lg bg-white/20 px-3 py-2 text-sm font-semibold text-white hover:bg-white/30" @click="nextPostImage()">Next</button>
             </div>
         </div>
     </div>

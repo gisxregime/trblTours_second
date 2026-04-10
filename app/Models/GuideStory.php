@@ -18,7 +18,12 @@ class GuideStory extends Model
     protected $fillable = [
         'guide_id',
         'image_path',
+        'image_paths',
         'caption',
+        'content',
+        'likes_count',
+        'liked_by',
+        'messages',
         'expires_at',
     ];
 
@@ -29,6 +34,9 @@ class GuideStory extends Model
     {
         return [
             'expires_at' => 'datetime',
+            'image_paths' => 'array',
+            'liked_by' => 'array',
+            'messages' => 'array',
         ];
     }
 
