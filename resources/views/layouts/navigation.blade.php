@@ -1,7 +1,8 @@
 <nav
-    x-data="{ open: false, scrolled: false, init() { this.scrolled = window.scrollY > 8; window.addEventListener('scroll', () => { this.scrolled = window.scrollY > 8; }); } }"
-    :class="scrolled ? 'bg-[#d4a563]/85 shadow-md backdrop-blur-md supports-[backdrop-filter]:bg-[#d4a563]/75' : 'bg-white shadow-sm border-b border-[#d4a563]/40'"
-    class="sticky top-0 z-50 transition-all duration-300"
+    id="appNavbar"
+    x-data="{ open: false }"
+    class="sticky top-0 z-50 border-b shadow-sm transition-all duration-300"
+    style="background-color: #ffffff; border-bottom-color: rgba(212, 165, 99, 0.4);"
 >
     @php($user = Auth::user())
     @php($dashboardRoute = $user->dashboardRouteName())
@@ -58,7 +59,7 @@
                             {{ __('Settings') }}
                         </x-dropdown-link>
 
-                        <div class="border-t border-[#d9ad6e]"></div>
+                        <div class="border-t border-[#d4a563]"></div>
 
                         <!-- Authentication -->
                         <form method="POST" action="{{ route('logout') }}">
@@ -129,3 +130,32 @@
         </div>
     </div>
 </nav>
+
+<script>
+    (() => {
+        const nav = document.getElementById('appNavbar');
+
+        if (!nav) {
+            return;
+        }
+
+        const applyNavbarScrollState = () => {
+            if (window.scrollY > 0) {
+                nav.style.backgroundColor = 'rgba(212, 165, 99, 0.9)';
+                nav.style.borderBottomColor = '#c69958';
+                nav.classList.add('shadow-md', 'backdrop-blur-md');
+                nav.classList.remove('shadow-sm');
+
+                return;
+            }
+
+            nav.style.backgroundColor = '#ffffff';
+            nav.style.borderBottomColor = 'rgba(212, 165, 99, 0.4)';
+            nav.classList.add('shadow-sm');
+            nav.classList.remove('shadow-md', 'backdrop-blur-md');
+        };
+
+        applyNavbarScrollState();
+        window.addEventListener('scroll', applyNavbarScrollState, { passive: true });
+    })();
+</script>
