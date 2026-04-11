@@ -188,6 +188,7 @@
     class="min-h-screen bg-white pb-10"
     x-data="{
         activeTab: 'posts',
+        composeBoxOpen: false,
         tourPreviews: @js($tourPreviews),
         postFeed: @js($postFeed),
         selectedTour: null,
@@ -223,13 +224,9 @@
         }
     }"
     @keydown.escape.window="closeTourPreview(); closePostLightbox();"
+    @post-created.window="composeBoxOpen = false"
 >
     <section class="mx-auto w-full max-w-6xl px-4 pt-6 sm:px-6 lg:px-8">
-        <div class="mb-4 rounded-lg border border-[#d4a563] bg-white px-6 py-4 shadow-sm">
-            <h2 class="text-xl font-semibold leading-tight text-slate-900">{{ __('Your Guide Profile') }}</h2>
-            <p class="mt-1 text-sm text-slate-500">Your public profile preview with your stories and tours.</p>
-        </div>
-
         <article class="overflow-hidden rounded-lg border border-[#d4a563] bg-white shadow-md">
             <div class="relative h-56 w-full bg-gradient-to-r from-[#7a8f3a] to-[#556b2f]">
                 @if ($guide['cover_photo_path'] !== '')
@@ -317,21 +314,25 @@
                 </div>
             </div>
 
-            <div class="p-6" x-show="activeTab === 'posts'" x-cloak>
+            <div class="bg-[#f6f0e4] p-6" x-show="activeTab === 'posts'" x-cloak>
                 <form wire:submit.prevent="createPost" class="mb-6 rounded-2xl border border-[#d4a563] bg-white p-5 shadow-sm">
-                    <h4 class="text-base font-semibold text-[#556b2f]">Create Post</h4>
+                    <p class="text-base font-semibold text-[#556b2f]">What's on your mind, {{ $guide['display_name'] ?: 'Diana Grace' }}?</p>
 
-                    <div class="mt-4 space-y-3">
+                    <div class="mt-3">
                         <textarea
                             wire:model.live="postText"
-                            rows="4"
-                            class="w-full rounded-xl border border-[#d9c08c] bg-[#fffef8] px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-[#7a8f3a] focus:ring-2 focus:ring-[#7a8f3a]/20"
-                            placeholder="Share your latest tour experience..."
+                            x-on:focus="composeBoxOpen = true"
+                            x-on:click="composeBoxOpen = true"
+                            x-bind:rows="composeBoxOpen ? 4 : 1"
+                            class="w-full resize-none rounded-2xl border border-[#d9c08c] bg-[#fff7ec] px-4 py-3 text-sm text-[#5f3f25] outline-none transition focus:border-[#7a8f3a] focus:bg-white focus:ring-2 focus:ring-[#7a8f3a]/20"
+                            placeholder="Share your latest tour experience...."
                         ></textarea>
                         @error('postText') <p class="text-xs text-rose-600">{{ $message }}</p> @enderror
+                    </div>
 
+                    <div x-show="composeBoxOpen" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 -translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 -translate-y-1" x-cloak class="mt-4 space-y-3">
                         <div>
-                            <p class="mb-1 block text-sm font-medium text-slate-700">Upload Photos</p>
+                            <p class="mb-1 block text-sm font-medium text-[#556b2f]">Upload Photos</p>
                             <input
                                 id="post_images"
                                 wire:model="newPostImages"
@@ -342,7 +343,7 @@
                                 multiple
                                 class="sr-only"
                             >
-                            <label for="post_images" class="inline-flex cursor-pointer items-center rounded-lg bg-[#7a8730] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#697629]">
+                            <label for="post_images" class="inline-flex cursor-pointer items-center rounded-lg bg-[#7a8f3a] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#697629]">
                                 Choose up to 5 photos
                             </label>
                         </div>
@@ -357,7 +358,7 @@
                             $postPhotosCount = $hasNewPostPhotos ? count($postImages) : 0;
                         @endphp
 
-                        <p class="text-xs text-slate-500">
+                        <p class="text-xs text-[#7a5532]">
                             {{ $hasNewPostPhotos ? $postPhotosCount.' of 5 photos selected' : 'No photos uploaded yet. Thumbnails will appear below.' }}
                         </p>
 
@@ -388,7 +389,7 @@
                                 type="submit"
                                 wire:loading.attr="disabled"
                                 wire:target="createPost,newPostImages,cancelPostDraft,removePostImage"
-                                class="inline-flex items-center rounded-lg bg-[#556b2f] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#465826] disabled:cursor-not-allowed disabled:opacity-60"
+                                class="inline-flex items-center rounded-lg bg-[#d4a563] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#bf9155] disabled:cursor-not-allowed disabled:opacity-60"
                                 @disabled(trim($postText) === '' || ! $hasNewPostPhotos)
                             >
                                 <span wire:loading.remove wire:target="createPost">Post</span>
@@ -397,13 +398,14 @@
                             <button
                                 type="button"
                                 wire:click="cancelPostDraft"
+                                @click="composeBoxOpen = false"
                                 wire:loading.attr="disabled"
                                 wire:target="createPost,newPostImages,cancelPostDraft,removePostImage"
                                 class="inline-flex items-center rounded-lg border border-[#d4a563] bg-white px-4 py-2 text-sm font-semibold text-[#7a5532] transition hover:bg-[#fff7ec]"
                             >
                                 Cancel
                             </button>
-                            <span class="text-xs text-slate-500">JPG, PNG, WebP only</span>
+                            <span class="text-xs text-[#7a5532]">JPG, PNG, WebP only</span>
                         </div>
                     </div>
                 </form>
