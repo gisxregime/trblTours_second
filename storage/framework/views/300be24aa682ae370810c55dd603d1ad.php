@@ -1,12 +1,14 @@
 <nav
-    x-data="{ open: false, scrolled: false, init() { this.scrolled = window.scrollY > 8; window.addEventListener('scroll', () => { this.scrolled = window.scrollY > 8; }); } }"
-    :class="scrolled ? 'bg-[#d4a563]/85 shadow-md backdrop-blur-md supports-[backdrop-filter]:bg-[#d4a563]/75' : 'bg-white shadow-sm border-b border-[#d4a563]/40'"
-    class="sticky top-0 z-50 transition-all duration-300"
+    id="appNavbar"
+    x-data="{ open: false }"
+    class="sticky top-0 z-50 border-b shadow-sm transition-all duration-300"
+    style="background-color: #ffffff; border-bottom-color: rgba(212, 165, 99, 0.4);"
 >
     <?php ($user = Auth::user()); ?>
     <?php ($dashboardRoute = $user->dashboardRouteName()); ?>
     <?php ($isGuide = in_array($user->role, ['guide', 'tour_guide'], true)); ?>
     <?php ($viewProfileRoute = $isGuide ? 'dashboard.guide.profile.show' : 'profile.edit'); ?>
+    <?php ($settingsRoute = $isGuide ? 'dashboard.guide.settings' : 'profile.edit'); ?>
     <!-- Primary Navigation Menu -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
@@ -122,14 +124,14 @@
 
                         <?php if (isset($component)) { $__componentOriginal68cb1971a2b92c9735f83359058f7108 = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginal68cb1971a2b92c9735f83359058f7108 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.dropdown-link','data' => ['href' => '#','onclick' => 'alert(\'Settings - Under development\')']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.dropdown-link','data' => ['href' => route($settingsRoute)]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
 <?php $component->withName('dropdown-link'); ?>
 <?php if ($component->shouldRender()): ?>
 <?php $__env->startComponent($component->resolveView(), $component->data()); ?>
 <?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
 <?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
 <?php endif; ?>
-<?php $component->withAttributes(['href' => '#','onclick' => 'alert(\'Settings - Under development\')']); ?>
+<?php $component->withAttributes(['href' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(route($settingsRoute))]); ?>
                             <?php echo e(__('Settings')); ?>
 
                          <?php echo $__env->renderComponent(); ?>
@@ -143,7 +145,7 @@
 <?php unset($__componentOriginal68cb1971a2b92c9735f83359058f7108); ?>
 <?php endif; ?>
 
-                        <div class="border-t border-[#d9ad6e]"></div>
+                        <div class="border-t border-[#d4a563]"></div>
 
                         <!-- Authentication -->
                         <form method="POST" action="<?php echo e(route('logout')); ?>">
@@ -283,14 +285,14 @@
 
                 <?php if (isset($component)) { $__componentOriginald69b52d99510f1e7cd3d80070b28ca18 = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginald69b52d99510f1e7cd3d80070b28ca18 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.responsive-nav-link','data' => ['href' => '#','onclick' => 'alert(\'Settings - Under development\')']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.responsive-nav-link','data' => ['href' => route($settingsRoute)]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
 <?php $component->withName('responsive-nav-link'); ?>
 <?php if ($component->shouldRender()): ?>
 <?php $__env->startComponent($component->resolveView(), $component->data()); ?>
 <?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
 <?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
 <?php endif; ?>
-<?php $component->withAttributes(['href' => '#','onclick' => 'alert(\'Settings - Under development\')']); ?>
+<?php $component->withAttributes(['href' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(route($settingsRoute))]); ?>
                     <?php echo e(__('Settings')); ?>
 
                  <?php echo $__env->renderComponent(); ?>
@@ -337,4 +339,33 @@
         </div>
     </div>
 </nav>
+
+<script>
+    (() => {
+        const nav = document.getElementById('appNavbar');
+
+        if (!nav) {
+            return;
+        }
+
+        const applyNavbarScrollState = () => {
+            if (window.scrollY > 0) {
+                nav.style.backgroundColor = 'rgba(212, 165, 99, 0.9)';
+                nav.style.borderBottomColor = '#c69958';
+                nav.classList.add('shadow-md', 'backdrop-blur-md');
+                nav.classList.remove('shadow-sm');
+
+                return;
+            }
+
+            nav.style.backgroundColor = '#ffffff';
+            nav.style.borderBottomColor = 'rgba(212, 165, 99, 0.4)';
+            nav.classList.add('shadow-sm');
+            nav.classList.remove('shadow-md', 'backdrop-blur-md');
+        };
+
+        applyNavbarScrollState();
+        window.addEventListener('scroll', applyNavbarScrollState, { passive: true });
+    })();
+</script>
 <?php /**PATH /home/mistah-regime/tribaltours/resources/views/layouts/navigation.blade.php ENDPATH**/ ?>

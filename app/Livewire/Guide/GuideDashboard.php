@@ -22,6 +22,15 @@ class GuideDashboard extends Component
      */
     public array $declineReasons = [];
 
+    public function openSettings(): void
+    {
+        $user = Auth::user();
+        abort_if($user === null, 401);
+        abort_unless(in_array($user->role, ['guide', 'tour_guide'], true), 403);
+
+        $this->redirectRoute('dashboard.guide.settings', navigate: true);
+    }
+
     public function acceptRequest(int $requestId): void
     {
         $guideId = (int) Auth::id();

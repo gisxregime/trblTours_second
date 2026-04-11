@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\GuideProfileController;
+use App\Http\Controllers\GuideSettingsController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicGuideProfileController;
 use App\Livewire\Guide\GuideAvailabilityManager;
@@ -100,6 +101,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard/guide/profile/edit', [GuideProfileController::class, 'edit'])
         ->middleware('role:guide')
         ->name('dashboard.guide.profile.edit');
+    Route::get('/dashboard/guide/settings', [GuideSettingsController::class, 'edit'])
+        ->middleware('role:guide')
+        ->name('dashboard.guide.settings');
+    Route::put('/dashboard/guide/settings/password', [GuideSettingsController::class, 'updatePassword'])
+        ->middleware('role:guide')
+        ->name('dashboard.guide.settings.password.update');
+    Route::delete('/dashboard/guide/settings/account', [GuideSettingsController::class, 'destroy'])
+        ->middleware('role:guide')
+        ->name('dashboard.guide.settings.destroy');
     Route::patch('/dashboard/guide/profile', [GuideProfileController::class, 'update'])
         ->middleware('role:guide')
         ->name('dashboard.guide.profile.update');

@@ -8,6 +8,7 @@
     @php($dashboardRoute = $user->dashboardRouteName())
     @php($isGuide = in_array($user->role, ['guide', 'tour_guide'], true))
     @php($viewProfileRoute = $isGuide ? 'dashboard.guide.profile.show' : 'profile.edit')
+    @php($settingsRoute = $isGuide ? 'dashboard.guide.settings' : 'profile.edit')
     <!-- Primary Navigation Menu -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
@@ -55,7 +56,7 @@
                             {{ __('Notifications') }}
                         </x-dropdown-link>
 
-                        <x-dropdown-link href="#" onclick="alert('Settings - Under development')">
+                        <x-dropdown-link :href="route($settingsRoute)">
                             {{ __('Settings') }}
                         </x-dropdown-link>
 
@@ -112,7 +113,7 @@
                     {{ __('Notifications') }}
                 </x-responsive-nav-link>
 
-                <x-responsive-nav-link href="#" onclick="alert('Settings - Under development')">
+                <x-responsive-nav-link :href="route($settingsRoute)">
                     {{ __('Settings') }}
                 </x-responsive-nav-link>
 
