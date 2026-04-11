@@ -153,6 +153,7 @@ class GuideProfile extends Component
         ]));
 
         $this->reset(['postText', 'postImages']);
+        $this->dispatch('post-created');
     }
 
     public function processNewPostImages(): void

@@ -7,7 +7,7 @@
 
     <link rel="stylesheet" href="https://unpkg.com/cropperjs@1.6.2/dist/cropper.min.css">
 
-    <div class="bg-gradient-to-b from-slate-50 via-white to-emerald-50 py-10">
+    <div class="bg-white py-4">
         <div class="mx-auto w-full max-w-5xl px-4 sm:px-6 lg:px-8">
             <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
                 <div class="mb-6">
@@ -72,7 +72,7 @@
                     <div class="grid gap-6 lg:grid-cols-2">
                         <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
                             <label for="profile_photo" class="mb-2 block text-sm font-medium text-slate-700">Profile Photo</label>
-                            <input id="profile_photo" name="profile_photo" type="file" accept="image/*" class="block w-full text-sm text-slate-700 file:mr-3 file:rounded-md file:border-0 file:bg-[#d4a563] file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-[#c69958]">
+                            <input id="profile_photo" name="profile_photo" type="file" accept="image/*" class="block w-full text-sm text-slate-700 file:mr-3 file:rounded-md file:border-0 file:bg-[#7a8730] file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-[#697629]">
                             <p class="mt-2 text-xs text-slate-500">Optional. Upload to replace your current profile photo.</p>
 
                             <div class="mt-4 overflow-hidden rounded-lg border border-slate-200 bg-white p-2">
@@ -83,7 +83,7 @@
 
                         <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
                             <label for="cover_photo" class="mb-2 block text-sm font-medium text-slate-700">Cover Photo</label>
-                            <input id="cover_photo" name="cover_photo" type="file" accept="image/*" class="block w-full text-sm text-slate-700 file:mr-3 file:rounded-md file:border-0 file:bg-slate-700 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-slate-600">
+                            <input id="cover_photo" name="cover_photo" type="file" accept="image/*" class="block w-full text-sm text-slate-700 file:mr-3 file:rounded-md file:border-0 file:bg-[#7a8730] file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-[#697629]">
                             <p class="mt-2 text-xs text-slate-500">Optional. Recommended size: 1200x400.</p>
 
                             <div class="mt-4 overflow-hidden rounded-lg border border-slate-200 bg-white p-2">

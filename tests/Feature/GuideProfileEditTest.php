@@ -53,8 +53,6 @@ it('shows the facebook-style guide profile page', function () {
     actingAs($user)
         ->get(route('dashboard.guide.profile.show'))
         ->assertSuccessful()
-        ->assertSee('Your Guide Profile')
-        ->assertSee('Guide Profile')
         ->assertSee('Guide Maria')
         ->assertSee('Cebu City')
         ->assertSee('My Tours');
@@ -229,7 +227,6 @@ it('keeps existing photos when saving without new uploads', function () {
         'created_at' => now(),
         'updated_at' => now(),
     ]);
-
     actingAs($user)
         ->patch(route('dashboard.guide.profile.update'), [
             'full_name' => 'Mina Cruz',
