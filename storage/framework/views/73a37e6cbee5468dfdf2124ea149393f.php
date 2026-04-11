@@ -188,6 +188,7 @@
     class="min-h-screen bg-white pb-10"
     x-data="{
         activeTab: 'posts',
+        composeBoxOpen: false,
         tourPreviews: <?php echo \Illuminate\Support\Js::from($tourPreviews)->toHtml() ?>,
         postFeed: <?php echo \Illuminate\Support\Js::from($postFeed)->toHtml() ?>,
         selectedTour: null,
@@ -223,13 +224,9 @@
         }
     }"
     @keydown.escape.window="closeTourPreview(); closePostLightbox();"
+    @post-created.window="composeBoxOpen = false"
 >
     <section class="mx-auto w-full max-w-6xl px-4 pt-6 sm:px-6 lg:px-8">
-        <div class="mb-4 rounded-lg border border-[#d4a563] bg-white px-6 py-4 shadow-sm">
-            <h2 class="text-xl font-semibold leading-tight text-slate-900"><?php echo e(__('Your Guide Profile')); ?></h2>
-            <p class="mt-1 text-sm text-slate-500">Your public profile preview with your stories and tours.</p>
-        </div>
-
         <article class="overflow-hidden rounded-lg border border-[#d4a563] bg-white shadow-md">
             <div class="relative h-56 w-full bg-gradient-to-r from-[#7a8f3a] to-[#556b2f]">
                 <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($guide['cover_photo_path'] !== ''): ?>
@@ -322,16 +319,18 @@
                 </div>
             </div>
 
-            <div class="p-6" x-show="activeTab === 'posts'" x-cloak>
+            <div class="bg-[#f6f0e4] p-6" x-show="activeTab === 'posts'" x-cloak>
                 <form wire:submit.prevent="createPost" class="mb-6 rounded-2xl border border-[#d4a563] bg-white p-5 shadow-sm">
-                    <h4 class="text-base font-semibold text-[#556b2f]">Create Post</h4>
+                    <p class="text-base font-semibold text-[#556b2f]">What's on your mind, <?php echo e($guide['display_name'] ?: 'Diana Grace'); ?>?</p>
 
-                    <div class="mt-4 space-y-3">
+                    <div class="mt-3">
                         <textarea
                             wire:model.live="postText"
-                            rows="4"
-                            class="w-full rounded-xl border border-[#d9c08c] bg-[#fffef8] px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-[#7a8f3a] focus:ring-2 focus:ring-[#7a8f3a]/20"
-                            placeholder="Share your latest tour experience..."
+                            x-on:focus="composeBoxOpen = true"
+                            x-on:click="composeBoxOpen = true"
+                            x-bind:rows="composeBoxOpen ? 4 : 1"
+                            class="w-full resize-none rounded-2xl border border-[#d9c08c] bg-[#fff7ec] px-4 py-3 text-sm text-[#5f3f25] outline-none transition focus:border-[#7a8f3a] focus:bg-white focus:ring-2 focus:ring-[#7a8f3a]/20"
+                            placeholder="Share your latest tour experience...."
                         ></textarea>
                         <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__errorArgs = ['postText'];
 $__bag = $errors->getBag($__errorArgs[1] ?? 'default');
@@ -341,20 +340,42 @@ $message = $__bag->first($__errorArgs[0]); ?> <p class="text-xs text-rose-600"><
 if (isset($__messageOriginal)) { $message = $__messageOriginal; }
 endif;
 unset($__errorArgs, $__bag); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+                    </div>
 
+                    <div x-show="composeBoxOpen" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 -translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 -translate-y-1" x-cloak class="mt-4 space-y-3">
                         <div>
-                            <label class="mb-1 block text-sm font-medium text-slate-700" for="post_images">Upload Photos</label>
+                            <p class="mb-1 block text-sm font-medium text-[#556b2f]">Upload Photos</p>
                             <input
                                 id="post_images"
-                                wire:model="postImages"
+                                wire:model="newPostImages"
+                                wire:key="post-images-input-<?php echo e(count($postImages ?? [])); ?>"
                                 type="file"
-                                accept="image/*"
+                                name="post_images[]"
+                                accept="image/jpeg,image/png,image/webp"
                                 multiple
-                                class="block w-full text-sm text-slate-700 file:mr-3 file:rounded-lg file:border-0 file:bg-[#7a8730] file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-[#697629]"
+                                class="sr-only"
                             >
+                            <label for="post_images" class="inline-flex cursor-pointer items-center rounded-lg bg-[#7a8f3a] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#697629]">
+                                Choose up to 5 photos
+                            </label>
                         </div>
-                        <p class="text-xs text-slate-500">Upload up to 5 images for post preview.</p>
-                        <div wire:loading wire:target="postImages" class="text-xs text-[#6c792a]">Uploading photos...</div>
+                        <div wire:loading wire:target="newPostImages" class="text-xs text-[#6c792a]">Uploading photos...</div>
+                        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__errorArgs = ['newPostImages'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> <p class="text-xs text-rose-600"><?php echo e($message); ?></p> <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+                        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__errorArgs = ['newPostImages.*'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> <p class="text-xs text-rose-600"><?php echo e($message); ?></p> <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                         <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__errorArgs = ['postImages'];
 $__bag = $errors->getBag($__errorArgs[1] ?? 'default');
 if ($__bag->has($__errorArgs[0])) :
@@ -374,7 +395,13 @@ unset($__errorArgs, $__bag); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendB
 
                         <?php
                             $hasNewPostPhotos = is_array($postImages ?? null) && count($postImages) > 0;
+                            $postPhotosCount = $hasNewPostPhotos ? count($postImages) : 0;
                         ?>
+
+                        <p class="text-xs text-[#7a5532]">
+                            <?php echo e($hasNewPostPhotos ? $postPhotosCount.' of 5 photos selected' : 'No photos uploaded yet. Thumbnails will appear below.'); ?>
+
+                        </p>
 
                         <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
                             <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($hasNewPostPhotos): ?>
@@ -387,7 +414,7 @@ unset($__errorArgs, $__bag); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendB
                                             class="absolute right-1 top-1 inline-flex h-6 w-6 items-center justify-center rounded-full bg-black/65 text-xs font-bold text-white transition hover:bg-black"
                                             aria-label="Remove photo"
                                         >
-                                            ×
+                                            <i class="fa-solid fa-xmark" aria-hidden="true"></i>
                                         </button>
                                     </div>
                                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
@@ -402,8 +429,8 @@ unset($__errorArgs, $__bag); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendB
                             <button
                                 type="submit"
                                 wire:loading.attr="disabled"
-                                wire:target="createPost,postImages,cancelPostDraft,removePostImage"
-                                class="inline-flex items-center rounded-lg bg-[#556b2f] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#465826] disabled:cursor-not-allowed disabled:opacity-60"
+                                wire:target="createPost,newPostImages,cancelPostDraft,removePostImage"
+                                class="inline-flex items-center rounded-lg bg-[#d4a563] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#bf9155] disabled:cursor-not-allowed disabled:opacity-60"
                                 <?php if(trim($postText) === '' || ! $hasNewPostPhotos): echo 'disabled'; endif; ?>
                             >
                                 <span wire:loading.remove wire:target="createPost">Post</span>
@@ -412,13 +439,14 @@ unset($__errorArgs, $__bag); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendB
                             <button
                                 type="button"
                                 wire:click="cancelPostDraft"
+                                @click="composeBoxOpen = false"
                                 wire:loading.attr="disabled"
-                                wire:target="createPost,postImages,cancelPostDraft,removePostImage"
+                                wire:target="createPost,newPostImages,cancelPostDraft,removePostImage"
                                 class="inline-flex items-center rounded-lg border border-[#d4a563] bg-white px-4 py-2 text-sm font-semibold text-[#7a5532] transition hover:bg-[#fff7ec]"
                             >
                                 Cancel
                             </button>
-                            <span class="text-xs text-slate-500">JPG, PNG, WebP only</span>
+                            <span class="text-xs text-[#7a5532]">JPG, PNG, WebP only</span>
                         </div>
                     </div>
                 </form>
@@ -446,12 +474,12 @@ unset($__errorArgs, $__bag); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendB
                                         </div>
                                         <div>
                                             <p class="text-sm font-semibold text-slate-900"><?php echo e($postCard['guide_name'] ?? ($guide['display_name'] ?? 'Guide')); ?></p>
-                                            <p class="text-xs text-slate-500"><?php echo e($postCard['created_at_human'] ?? 'Just now'); ?></p>
+                                            <p class="text-xs text-[#7a5532]"><?php echo e($postCard['created_at_human'] ?? 'Just now'); ?></p>
                                         </div>
                                     </div>
 
                                     <div class="relative" x-data="{ openMenu: false }">
-                                        <button type="button" @click="openMenu = !openMenu" class="rounded-full p-2 text-slate-500 transition hover:bg-[#fff7ec] hover:text-[#7a5532]">⋮</button>
+                                        <button type="button" @click="openMenu = !openMenu" class="rounded-full p-2 text-[#7a5532] transition hover:bg-[#fff7ec] hover:text-[#5f3f25]">⋮</button>
                                         <div x-show="openMenu" x-cloak @click.away="openMenu = false" class="absolute right-0 z-20 mt-1 w-32 rounded-lg border border-[#d4a563]/60 bg-white p-1 shadow-lg">
                                             <button type="button" class="w-full rounded-md px-3 py-2 text-left text-xs font-medium text-[#556b2f] hover:bg-[#f4f6eb]" wire:click="startEditingPost(<?php echo e($post->id); ?>)">Edit</button>
                                             <button type="button" class="w-full rounded-md px-3 py-2 text-left text-xs font-medium text-rose-600 hover:bg-rose-50" wire:click="deletePost(<?php echo e($post->id); ?>)" onclick="return confirm('Delete this post?')">Delete</button>
@@ -475,14 +503,14 @@ unset($__errorArgs, $__bag); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendB
                                             <button type="button" wire:click="cancelEditingPost" class="rounded-lg border border-[#d4a563] px-3 py-1.5 text-xs font-semibold text-[#7a5532] hover:bg-[#fff7ec]">Cancel</button>
                                         </div>
                                     <?php else: ?>
-                                        <p class="text-sm leading-6 text-slate-700"><?php echo e($postCard['text'] ?? 'No message provided.'); ?></p>
+                                        <p class="text-sm leading-6 text-[#5f3f25]"><?php echo e($postCard['text'] ?? 'No message provided.'); ?></p>
                                     <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                                 </div>
 
                                 <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($postCardImages !== []): ?>
                                     <div class="grid gap-1 px-5 pb-4 <?php echo e(count($postCardImages) === 1 ? 'grid-cols-1' : 'grid-cols-2'); ?>">
                                         <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = $postCardImages; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $imageIndex => $imageUrl): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                            <button type="button" wire:key="post-image-<?php echo e($post->id); ?>-<?php echo e($imageIndex); ?>" class="overflow-hidden rounded-xl border border-[#e8d3aa] bg-[#f4f6eb] <?php echo e(count($postCardImages) === 1 ? 'h-72' : 'h-44'); ?>" @click="openPostLightbox(<?php echo \Illuminate\Support\Js::from($postCardImages)->toHtml() ?>, <?php echo e($imageIndex); ?>)">
+                                            <button type="button" wire:key="post-image-<?php echo e($post->id); ?>-<?php echo e($imageIndex); ?>" class="overflow-hidden rounded-xl border-2 border-[#b06f3b] bg-[#f6eadb] <?php echo e(count($postCardImages) === 1 ? 'h-[28rem]' : 'h-56'); ?>" @click="openPostLightbox(<?php echo \Illuminate\Support\Js::from($postCardImages)->toHtml() ?>, <?php echo e($imageIndex); ?>)">
                                                 <img src="<?php echo e($imageUrl); ?>" alt="Post image" class="h-full w-full object-cover">
                                             </button>
                                         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
@@ -490,25 +518,25 @@ unset($__errorArgs, $__bag); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendB
                                 <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
 
                                 <div class="border-t border-[#ead2ad] px-5 py-3">
-                                    <div class="flex items-center justify-between text-xs text-slate-500">
-                                        <p>❤️ <?php echo e($postCard['likes_count'] ?? 0); ?></p>
-                                        <p>💬 <?php echo e($postCard['messages_count'] ?? 0); ?> messages</p>
+                                    <div class="flex items-center justify-between text-xs text-[#7a5532]">
+                                        <p class="inline-flex items-center gap-1"><i class="fa-solid fa-heart" aria-hidden="true"></i> <?php echo e($postCard['likes_count'] ?? 0); ?></p>
+                                        <p class="inline-flex items-center gap-1"><i class="fa-solid fa-message" aria-hidden="true"></i> <?php echo e($postCard['messages_count'] ?? 0); ?> messages</p>
                                     </div>
 
                                     <div class="mt-3 grid grid-cols-2 gap-2 border-t border-[#f1e2c8] pt-3">
                                         <button type="button" wire:click="toggleLike(<?php echo e($post->id); ?>)" class="inline-flex items-center justify-center gap-1 rounded-lg px-3 py-2 text-sm font-semibold transition <?php echo e($postLiked ? 'bg-rose-50 text-rose-600' : 'bg-[#f8f3e7] text-[#7a5532] hover:bg-[#f1e8d5]'); ?>">
-                                            <span><?php echo e($postLiked ? '❤️' : '🤍'); ?></span>
+                                            <i class="<?php echo e($postLiked ? 'fa-solid' : 'fa-regular'); ?> fa-heart" aria-hidden="true"></i>
                                             <span>Like</span>
                                         </button>
                                         <button type="button" wire:click="toggleMessageComposer(<?php echo e($post->id); ?>)" class="inline-flex items-center justify-center gap-1 rounded-lg bg-[#f8f3e7] px-3 py-2 text-sm font-semibold text-[#556b2f] transition hover:bg-[#eaf0d6]">
-                                            <span>💬</span>
+                                            <i class="fa-solid fa-message" aria-hidden="true"></i>
                                             <span>Message</span>
                                         </button>
                                     </div>
 
                                     <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($messageComposerOpen[$post->id] ?? false): ?>
                                         <div class="mt-3 flex items-center gap-2">
-                                            <input type="text" wire:model.live="messageInputs.<?php echo e($post->id); ?>" class="w-full rounded-lg border border-[#d9c08c] bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-[#7a8f3a] focus:ring-2 focus:ring-[#7a8f3a]/20" placeholder="Type your message to the guide...">
+                                            <input type="text" wire:model.live="messageInputs.<?php echo e($post->id); ?>" class="w-full rounded-lg border border-[#d9c08c] bg-white px-3 py-2 text-sm text-[#5f3f25] outline-none focus:border-[#7a8f3a] focus:ring-2 focus:ring-[#7a8f3a]/20" placeholder="Type your message to the guide...">
                                             <button type="button" wire:click="sendMessage(<?php echo e($post->id); ?>)" class="rounded-lg bg-[#556b2f] px-3 py-2 text-xs font-semibold text-white hover:bg-[#465826]">Send</button>
                                         </div>
                                         <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__errorArgs = ['messageInputs.'.$post->id];
@@ -526,7 +554,7 @@ unset($__errorArgs, $__bag); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendB
                     </div>
                 <?php else: ?>
                     <div class="rounded-2xl border border-dashed border-[#d4a563] bg-[#f4f6eb] p-8 text-center">
-                        <p class="text-sm text-slate-600">No posts yet. Share your first tour moment.</p>
+                        <p class="text-sm text-[#7a5532]">No posts yet. Share your first tour moment.</p>
                     </div>
                 <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
             </div>

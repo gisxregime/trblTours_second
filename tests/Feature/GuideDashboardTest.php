@@ -62,3 +62,17 @@ it('allows tour_guide role to access guide dashboard', function () {
         ->assertSee('Your Tour Listings')
         ->assertSee('Recent Reviews');
 });
+
+it('allows guides to access dashboard settings', function () {
+    $user = User::factory()->create([
+        'role' => 'guide',
+        'name' => 'Guide Settings User',
+    ]);
+
+    actingAs($user)
+        ->get(route('dashboard.guide.settings'))
+        ->assertSuccessful()
+        ->assertSee('Guide Settings')
+        ->assertSee('Change Password')
+        ->assertSee('Delete Account');
+});

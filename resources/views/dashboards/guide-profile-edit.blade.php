@@ -117,6 +117,13 @@
 
     <div id="toastContainer" class="pointer-events-none fixed right-4 top-4 z-[100] flex w-full max-w-sm flex-col gap-2"></div>
 
+    <!-- Back to Dashboard button at the very bottom -->
+    <div class="flex justify-end mt-10">
+        <a href="{{ route('dashboard.guide') }}" class="inline-flex items-center rounded-lg border border-[#d4a563]/45 bg-[#d4a563] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#bf9155]">
+            Back to Dashboard
+        </a>
+    </div>
+
     <script src="https://unpkg.com/cropperjs@1.6.2/dist/cropper.min.js"></script>
     <script>
         (() => {
