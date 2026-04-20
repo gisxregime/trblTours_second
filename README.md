@@ -1,7 +1,7 @@
 
-# TribalTours
+# TrblTours
 
-TribalTours is a Laravel 13 application for local tour discovery and guide management.
+TrblTours is a Laravel 13 application for local tour discovery and guide management.
 
 ## Initial Development
 
