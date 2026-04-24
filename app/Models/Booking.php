@@ -70,6 +70,16 @@ class Booking extends Model
         return $this->belongsTo(Tour::class);
     }
 
+    public function tourListing(): BelongsTo
+    {
+        return $this->belongsTo(TourListing::class);
+    }
+
+    public function touristRequest(): BelongsTo
+    {
+        return $this->belongsTo(TouristRequest::class);
+    }
+
     public function review(): HasOne
     {
         return $this->hasOne(TourReview::class);

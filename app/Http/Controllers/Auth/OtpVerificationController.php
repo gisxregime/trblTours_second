@@ -72,7 +72,7 @@ class OtpVerificationController extends Controller
 
         // Send OTP via Gmail
         $mailService = new GmailMailService;
-        $sent = $mailService->sendOTP($user->email, $otpCode, $user->name);
+        $sent = $mailService->sendOTP($user->email, $otpCode, $user->full_name ?? $user->name);
 
         if (! $sent) {
             return back()->with('error', 'Failed to resend verification code. Please try again.');

@@ -1,19 +1,13 @@
 <?php
 
 use App\Models\User;
-use function Pest\Laravel\actingAs;
-use function Pest\Laravel\assertGuest;
-use function Pest\Laravel\delete;
-use function Pest\Laravel\from;
-use function Pest\Laravel\get;
-use function Pest\Laravel\patch;
 
 test('profile page is displayed', function () {
     $user = User::factory()->create();
 
-    actingAs($user);
-
-    $response = get('/profile');
+    $response = $this
+        ->actingAs($user)
+        ->get('/profile');
 
     $response->assertOk();
 });
@@ -21,9 +15,9 @@ test('profile page is displayed', function () {
 test('profile information can be updated', function () {
     $user = User::factory()->create();
 
-    actingAs($user);
-
-    $response = patch('/profile', [
+    $response = $this
+        ->actingAs($user)
+        ->patch('/profile', [
             'name' => 'Test User',
             'email' => 'test@example.com',
         ]);
@@ -42,9 +36,9 @@ test('profile information can be updated', function () {
 test('email verification status is unchanged when the email address is unchanged', function () {
     $user = User::factory()->create();
 
-    actingAs($user);
-
-    $response = patch('/profile', [
+    $response = $this
+        ->actingAs($user)
+        ->patch('/profile', [
             'name' => 'Test User',
             'email' => $user->email,
         ]);
@@ -59,9 +53,9 @@ test('email verification status is unchanged when the email address is unchanged
 test('user can delete their account', function () {
     $user = User::factory()->create();
 
-    actingAs($user);
-
-    $response = delete('/profile', [
+    $response = $this
+        ->actingAs($user)
+        ->delete('/profile', [
             'password' => 'password',
         ]);
 
@@ -69,16 +63,17 @@ test('user can delete their account', function () {
         ->assertSessionHasNoErrors()
         ->assertRedirect('/');
 
-    assertGuest();
+    $this->assertGuest();
     $this->assertNull($user->fresh());
 });
 
 test('correct password must be provided to delete account', function () {
     $user = User::factory()->create();
 
-    actingAs($user);
-
-    $response = from('/profile')->delete('/profile', [
+    $response = $this
+        ->actingAs($user)
+        ->from('/profile')
+        ->delete('/profile', [
             'password' => 'wrong-password',
         ]);
 

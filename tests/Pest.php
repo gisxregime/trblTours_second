@@ -1,12 +1,7 @@
 <?php
 
-use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
-
-pest()->extend(Tests\DuskTestCase::class)
-    ->use(DatabaseMigrations::class)
-    ->in('Browser');
 
 /*
 |--------------------------------------------------------------------------

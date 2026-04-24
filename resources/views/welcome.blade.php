@@ -1288,7 +1288,7 @@
             </a>
 
             <nav class="header-nav" aria-label="Primary navigation">
-                <a href="#">Home</a>
+                <a href="#">Dashboard</a>
                 <a href="#tourist-tips">Blogs</a>
                 <a href="#why-choose-us">About</a>
                 <select class="language-pill" aria-label="Language">

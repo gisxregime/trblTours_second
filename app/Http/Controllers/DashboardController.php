@@ -2,14 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\BookingRequest;
 use App\Models\Tour;
 use App\Models\User;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Arr;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Eloquent\Builder;
 
 class DashboardController extends Controller
 {
@@ -18,9 +20,158 @@ class DashboardController extends Controller
         return redirect()->route($request->user()->dashboardRouteName());
     }
 
-    public function tourist(): View
+    public function tourist(Request $request): View
     {
-        return view('dashboards.tourist');
+        $user = $request->user();
+
+        abort_unless($user->role === 'tourist', 403);
+
+        $regions = [
+            'National Capital Region',
+            'Cordillera Administrative Region',
+            'Ilocos Region',
+            'Cagayan Valley',
+            'Central Luzon',
+            'CALABARZON',
+            'MIMAROPA',
+            'Bicol Region',
+            'Western Visayas',
+            'Central Visayas',
+            'Eastern Visayas',
+            'Zamboanga Peninsula',
+            'Northern Mindanao',
+            'Davao Region',
+            'SOCCSKSARGEN',
+            'Caraga',
+            'BARMM',
+        ];
+
+        $location = trim((string) $request->query('location', ''));
+        $postType = (string) $request->query('post_type', 'all');
+        $sortBy = (string) $request->query('sort_by', 'latest');
+        $perPage = 12;
+
+        if (! in_array($postType, ['all', 'tour_listings', 'request_posts'], true)) {
+            $postType = 'all';
+        }
+
+        if (! in_array($sortBy, ['latest', 'price_low_high', 'price_high_low'], true)) {
+            $sortBy = 'latest';
+        }
+
+        $tourListings = collect();
+        if (in_array($postType, ['all', 'tour_listings'], true)) {
+            $userColumns = Schema::getColumnListing('users');
+
+            $tourListings = Tour::query()
+                ->with(['marketplaceGuide:id,name,full_name,role,status'])
+                ->whereHas('marketplaceGuide', function (Builder $query) use ($userColumns): void {
+                    $query->whereIn('role', ['guide', 'tour_guide'])
+                        ->where('status', 'active');
+
+                    $query->where(function (Builder $verificationQuery) use ($userColumns): void {
+                        $hasAnyVerificationColumn = false;
+
+                        if (in_array('verification_status', $userColumns, true)) {
+                            $verificationQuery->orWhere('verification_status', 'verified');
+                            $hasAnyVerificationColumn = true;
+                        }
+
+                        if (in_array('is_verified', $userColumns, true)) {
+                            $verificationQuery->orWhere('is_verified', true);
+                            $hasAnyVerificationColumn = true;
+                        }
+
+                        if (in_array('approved_by_admin', $userColumns, true)) {
+                            $verificationQuery->orWhere('approved_by_admin', true);
+                            $hasAnyVerificationColumn = true;
+                        }
+
+                        if (! $hasAnyVerificationColumn) {
+                            $verificationQuery->orWhereRaw('1 = 1');
+                        }
+                    });
+                })
+                ->when($location !== '', function ($query) use ($location): void {
+                    $query->where('region', $location);
+                })
+                ->latest()
+                ->get()
+                ->map(function (Tour $tour): array {
+                    return [
+                        'type' => 'tour_listing',
+                        'id' => (int) $tour->id,
+                        'created_at' => $tour->created_at,
+                        'price_value' => (float) ($tour->price_per_person ?? $tour->price ?? 0),
+                        'data' => $tour,
+                    ];
+                });
+        }
+
+        $requestPosts = collect();
+        if (in_array($postType, ['all', 'request_posts'], true)) {
+            $requestPosts = BookingRequest::query()
+                ->select('booking_requests.*')
+                ->addSelect([
+                    'comment_count' => DB::table('messages')
+                        ->join('conversations', 'conversations.id', '=', 'messages.conversation_id')
+                        ->selectRaw('count(messages.id)')
+                        ->whereColumn('conversations.tourist_id', 'booking_requests.tourist_id')
+                        ->whereColumn('conversations.guide_id', 'booking_requests.guide_id')
+                        ->whereColumn('conversations.tour_id', 'booking_requests.tour_id'),
+                ])
+                ->with([
+                    'tourist:id,name,full_name',
+                    'tour:id,title,region,duration_label',
+                ])
+                ->when($location !== '', function ($query) use ($location): void {
+                    $query->whereHas('tour', function ($tourQuery) use ($location): void {
+                        $tourQuery->where('region', $location);
+                    });
+                })
+                ->latest()
+                ->get()
+                ->map(function (BookingRequest $bookingRequest): array {
+                    return [
+                        'type' => 'request_post',
+                        'id' => (int) $bookingRequest->id,
+                        'created_at' => $bookingRequest->created_at,
+                        'price_value' => (float) $bookingRequest->total_price,
+                        'data' => $bookingRequest,
+                    ];
+                });
+        }
+
+        $posts = $tourListings->concat($requestPosts);
+
+        $posts = match ($sortBy) {
+            'price_low_high' => $posts->sortBy('price_value')->values(),
+            'price_high_low' => $posts->sortByDesc('price_value')->values(),
+            default => $posts->sortByDesc('created_at')->values(),
+        };
+
+        $page = LengthAwarePaginator::resolveCurrentPage();
+        $total = $posts->count();
+        $results = $posts->slice(($page - 1) * $perPage, $perPage)->values();
+
+        $paginatedPosts = new LengthAwarePaginator(
+            $results,
+            $total,
+            $perPage,
+            $page,
+            [
+                'path' => $request->url(),
+                'query' => $request->query(),
+            ]
+        );
+
+        return view('dashboards.tourist', [
+            'regions' => $regions,
+            'location' => $location,
+            'postType' => $postType,
+            'sortBy' => $sortBy,
+            'posts' => $paginatedPosts,
+        ]);
     }
 
     public function guide(Request $request): View
@@ -29,57 +180,15 @@ class DashboardController extends Controller
 
         abort_unless(in_array($user->role, ['guide', 'tour_guide'], true), 403);
 
-        $profile = $this->getGuideProfile((int) $user->id);
-
-        $firstName = $this->firstName($user->full_name ?: $user->name);
-
-        $criteria = [
-            ['label' => 'Profile photo uploaded', 'weight' => 15, 'complete' => $this->isFilled($profile, ['profile_photo_path', 'profile_photo', 'avatar_path', 'selfie_path'])],
-            ['label' => 'Bio completed (min. 100 characters)', 'weight' => 15, 'complete' => mb_strlen(trim((string) Arr::first([$profile['bio'] ?? null, $user->bio ?? null], fn ($value) => is_string($value)))) >= 100],
-            ['label' => 'Languages selected (min. 1)', 'weight' => 10, 'complete' => $this->hasAtLeastOneSelection(Arr::first([$profile['languages'] ?? null, $user->languages ?? null]))],
-            ['label' => 'Specialties selected (min. 1)', 'weight' => 10, 'complete' => $this->hasAtLeastOneSelection(Arr::first([$profile['specialties'] ?? null, $profile['specialty'] ?? null, $user->specialty ?? null]))],
-            ['label' => 'Government ID uploaded', 'weight' => 15, 'complete' => $this->isFilled($profile, ['id_front_path', 'id_back_path', 'government_id_path'])],
-            ['label' => 'NBI Clearance uploaded', 'weight' => 15, 'complete' => $this->isFilled($profile, ['nbi_clearance_path'])],
-            ['label' => 'Barangay Clearance uploaded', 'weight' => 10, 'complete' => $this->isFilled($profile, ['barangay_clearance_path'])],
-            ['label' => 'Payout details completed', 'weight' => 10, 'complete' => $this->isFilled($profile, ['payout_method', 'payout_account_name', 'payout_account_number', 'bank_account_name', 'bank_account_number', 'gcash_number', 'maya_number'])],
-        ];
-
-        $completionPercentage = collect($criteria)
-            ->filter(fn (array $criterion): bool => $criterion['complete'])
-            ->sum('weight');
-
-        $progressTheme = match (true) {
-            $completionPercentage <= 40 => [
-                'bar' => 'bg-red-500',
-                'badge' => 'bg-red-100 text-red-700',
-                'label' => 'Needs Attention',
-            ],
-            $completionPercentage <= 70 => [
-                'bar' => 'bg-yellow-500',
-                'badge' => 'bg-yellow-100 text-yellow-700',
-                'label' => 'In Progress',
-            ],
-            default => [
-                'bar' => 'bg-green-500',
-                'badge' => 'bg-green-100 text-green-700',
-                'label' => 'Almost Ready',
-            ],
-        };
-
-        $documentsPendingVerification = $this->hasPendingVerification($profile);
-
-        return view('dashboards.guide', [
-            'firstName' => $firstName,
-            'completionPercentage' => $completionPercentage,
-            'progressTheme' => $progressTheme,
-            'criteria' => $criteria,
-            'showCompletionReminder' => $completionPercentage < 100,
-            'showVerificationNotice' => $documentsPendingVerification,
-        ]);
+        return view('dashboards.guide-unavailable');
     }
+
+    // Scroll nav CSS in blade
 
     public function admin(): View
     {
+        abort_unless(request()->user()?->role === 'admin', 403);
+
         $totalUsers = User::query()->count();
         $activeGuides = User::query()
             ->whereIn('role', ['guide', 'tour_guide'])

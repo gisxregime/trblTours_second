@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Auth;
 
+use App\Models\User;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -30,6 +31,7 @@ class LoginRequest extends FormRequest
         return [
             'email' => ['required', 'string', 'email'],
             'password' => ['required', 'string'],
+            'role' => ['nullable', 'string', 'in:tourist,tour_guide'],
         ];
     }
 
@@ -42,8 +44,27 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
-        if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
+        $credentials = $this->only('email', 'password');
+        if ($this->filled('role')) {
+            $credentials['role'] = $this->string('role');
+        }
+
+        if (! Auth::attempt($credentials, $this->boolean('remember'))) {
             RateLimiter::hit($this->throttleKey());
+
+            // Check if email exists but with a different role
+            $email = $this->string('email');
+            $selectedRole = $this->string('role', 'tourist');
+            $existingUser = User::where('email', $email)->first();
+
+            if ($existingUser !== null && $existingUser->role !== $selectedRole) {
+                $currentRole = $existingUser->role === 'tour_guide' ? 'Tour Guide' : 'Tourist';
+                $desiredRole = $selectedRole === 'tour_guide' ? 'Tour Guide' : 'Tourist';
+
+                throw ValidationException::withMessages([
+                    'email' => "This email is already registered as a $currentRole. You need to sign up as a $desiredRole first.",
+                ]);
+            }
 
             throw ValidationException::withMessages([
                 'email' => trans('auth.failed'),

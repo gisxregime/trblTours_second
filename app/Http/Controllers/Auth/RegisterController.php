@@ -30,6 +30,7 @@ class RegisterController extends Controller
         // Create user with OTP
         $user = User::create([
             'name' => $validated['name'],
+            'full_name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
             'otp_code' => $otpCode,
@@ -47,6 +48,8 @@ class RegisterController extends Controller
             return back()->with('error', 'Failed to send verification email. Please try again.');
         }
 
-        return redirect()->route('verify.otp.form')->with('message', 'Verification code sent to your email. Please check your inbox.');
+        return redirect()->route('verify.otp.form')
+            ->with('message', 'Verification code sent to your email. Please check your inbox.')
+            ->with('email', $user->email);
     }
 }

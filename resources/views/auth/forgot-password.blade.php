@@ -8,21 +8,16 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Asimovian:wght@400;700&family=Cormorant+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Asimovian:wght@400;700&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     <style>
-        .brand-font {
-            font-family: 'Asimovian', 'Instrument Sans', sans-serif;
-            letter-spacing: 0.02em;
-        }
-
         body {
-            font-family: 'Instrument Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            margin: 0;
+            min-height: 100vh;
+            font-family: 'Instrument Sans', sans-serif;
             background: linear-gradient(rgba(212, 165, 99, 0.72), rgba(184, 195, 136, 0.56)), url('/images/signup_login_bg.jpg') center/cover no-repeat fixed;
             color: #6f5d52;
         }
@@ -33,7 +28,7 @@
             left: clamp(10px, 2.2vw, 24px);
             display: flex;
             align-items: center;
-            gap: clamp(8px, 1vw, 12px);
+            gap: 12px;
             z-index: 100;
         }
 
@@ -46,6 +41,7 @@
         }
 
         .brand-text {
+            font-family: 'Asimovian', sans-serif;
             font-size: clamp(14px, 1.8vw, 20px);
             font-weight: 700;
             color: #fffaf0;
@@ -53,77 +49,144 @@
         }
 
         .panel {
-            width: 100%;
-            max-width: 560px;
+            width: min(100%, 560px);
             background: rgba(255, 251, 244, 0.98);
             border-radius: 20px;
             box-shadow: 0 20px 60px rgba(101, 67, 33, 0.22);
             padding: 34px;
             border: 1px solid rgba(139, 69, 19, 0.08);
+            backdrop-filter: blur(10px);
         }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border: 1px solid #d8c9b5;
+            background: #f4efe6;
+            border-radius: 9999px;
+            padding: 6px 12px;
+            color: #3f2d1f;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        h1 {
+            margin-top: 14px;
+            font-size: 28px;
+            font-weight: 600;
+            color: #23170f;
+        }
+
+        .subtitle {
+            margin-top: 6px;
+            font-size: 14px;
+            color: #584637;
+        }
+
+        .alert {
+            margin-top: 16px;
+            border-radius: 12px;
+            padding: 12px 14px;
+            font-size: 14px;
+        }
+
+        .alert-success { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+        .alert-error { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+
+        .field {
+            margin-top: 16px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: #5c4a3a;
+        }
+
+        input {
+            width: 100%;
+            border: 1px solid #d8c9b5;
+            border-radius: 8px;
+            padding: 12px;
+            background: #f4efe6;
+            color: #2f241a;
+            font: inherit;
+        }
+
+        .actions {
+            margin-top: 16px;
+            display: grid;
+            gap: 10px;
+        }
+
+        .primary-btn,
+        .secondary-btn {
+            width: 100%;
+            border: 0;
+            border-radius: 9999px;
+            padding: 12px 16px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .primary-btn { background: #8b4e1c; color: #f8efe3; }
+        .secondary-btn { background: #f7efe1; color: #6f5d52; border: 1px solid #d8c9b5; }
+
+        .links {
+            margin-top: 14px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .links a { color: #4b3828; font-weight: 600; text-decoration: none; }
+        .links a:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
     <div class="brand-header">
         <img src="{{ asset('images/tribaltours_icon.png') }}" alt="TrblTours" class="brand-icon">
-        <div class="brand-text brand-font">TrblTours</div>
+        <div class="brand-text">TrblTours</div>
     </div>
 
     <main class="min-h-screen flex items-center justify-center px-4 py-8">
         <section class="panel">
-            <a href="{{ url('/') }}" class="inline-flex items-center gap-2 rounded-full border border-[#d8c9b5] bg-[#f4efe6] px-3 py-1.5 text-[13px] font-medium text-[#4b3828] shadow-sm transition hover:bg-[#ece1d0]">
+            <a href="{{ url('/') }}" class="back-link">
                 <i class="fas fa-arrow-left text-[10px]" aria-hidden="true"></i>
                 <span>Back to Home</span>
             </a>
 
-            <div class="mt-3 mb-4">
-                <h1 class="text-3xl font-semibold tracking-tight text-[#23170f]">Forgot your password?</h1>
-                <p class="mt-1 text-sm text-[#584637]">Enter your email and we will send a reset link so you can choose a new password.</p>
-            </div>
+            <h1>Forgot your password?</h1>
+            <p class="subtitle">Enter your email address and we’ll send a reset link.</p>
 
             @if (session('status'))
-                <div class="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
-                    {{ session('status') }}
-                </div>
+                <div class="alert alert-success">{{ session('status') }}</div>
             @endif
 
-            @if (session('errors')?->any())
-                <div class="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
-                    {{ session('errors')->first() }}
-                </div>
+            @if ($errors->any())
+                <div class="alert alert-error">{{ $errors->first() }}</div>
             @endif
 
-            <form method="POST" action="{{ route('password.email') }}" class="space-y-4">
+            <form method="POST" action="{{ route('password.email') }}">
                 @csrf
 
-                <p class="border-b border-[#d4c5b2] pb-2 text-[11px] font-semibold uppercase tracking-[0.09em] text-[#604c3a]">Password Reset</p>
-
-                <div>
-                    <label for="email" class="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-[#5c4a3a]">Email Address <span class="text-[#9a4f1d]">*</span></label>
-                    <input
-                        id="email"
-                        type="email"
-                        name="email"
-                        value="{{ old('email') }}"
-                        required
-                        autofocus
-                        autocomplete="email"
-                        placeholder="example@email.com"
-                        class="w-full rounded-lg border border-[#d8c9b5] bg-[#f4efe6] px-3 py-2.5 text-sm text-[#2f241a] outline-none transition placeholder:text-[#958067] focus:border-[#9a5f2a] focus:ring-0"
-                    >
+                <div class="field">
+                    <label for="email">Email</label>
+                    <input id="email" type="email" name="email" value="{{ old('email') }}" required autofocus>
                 </div>
 
-                <button
-                    type="submit"
-                    class="mt-2 w-full rounded-full bg-[#8b4e1c] px-4 py-2.5 text-sm font-semibold text-[#f8efe3] transition hover:bg-[#764116]"
-                >
-                    Email Password Reset Link
-                </button>
-
-                <p class="pt-1 text-center text-sm text-[#6f5b46]">
-                    Remembered your password?
-                    <a href="{{ route('login') }}" class="font-medium text-[#4b3828] hover:underline">Log in</a>
-                </p>
+                <div class="actions">
+                    <button type="submit" class="primary-btn">Email Password Reset Link</button>
+                    @if (Route::has('login'))
+                        <a href="{{ route('login') }}" class="secondary-btn" style="display:inline-flex; align-items:center; justify-content:center; text-decoration:none;">Back to Login</a>
+                    @endif
+                </div>
             </form>
         </section>
     </main>

@@ -37,4 +37,14 @@ class Message extends Model
     {
         return $this->belongsTo(User::class, 'sender_id');
     }
+
+    public function tourListing(): BelongsTo
+    {
+        return $this->belongsTo(TourListing::class);
+    }
+
+    public function touristRequest(): BelongsTo
+    {
+        return $this->belongsTo(TouristRequest::class);
+    }
 }

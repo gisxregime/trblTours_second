@@ -82,5 +82,9 @@ class DatabaseSeeder extends Seeder
         if (Schema::hasTable('tours') && Schema::hasColumn('tours', 'title')) {
             $this->call(TourSeeder::class);
         }
+
+        if (Schema::hasTable('tour_listings') && Schema::hasTable('tourist_requests') && Schema::hasTable('comments')) {
+            $this->call(TouristFeedSeeder::class);
+        }
     }
 }

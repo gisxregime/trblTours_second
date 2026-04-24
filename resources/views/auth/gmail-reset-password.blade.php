@@ -145,7 +145,10 @@
 
             <div class="form-group">
                 <label for="password">New Password (min. 8 characters)</label>
-                <input type="password" id="password" name="password" required>
+                <div style="position: relative;">
+                    <input type="password" id="password" name="password" required style="padding-right: 40px;" data-password-toggle-input="password">
+                    <button type="button" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); border: 0; background: transparent; cursor: pointer; font-size: 12px; font-weight: 700; color: #6f5d52;" data-password-toggle="password">Show</button>
+                </div>
                 @if ($errors->has('password'))
                     <div class="errors">{{ $errors->first('password') }}</div>
                 @endif
@@ -153,7 +156,10 @@
 
             <div class="form-group">
                 <label for="password_confirmation">Confirm Password</label>
-                <input type="password" id="password_confirmation" name="password_confirmation" required>
+                <div style="position: relative;">
+                    <input type="password" id="password_confirmation" name="password_confirmation" required style="padding-right: 40px;" data-password-toggle-input="password_confirmation">
+                    <button type="button" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); border: 0; background: transparent; cursor: pointer; font-size: 12px; font-weight: 700; color: #6f5d52;" data-password-toggle="password_confirmation">Show</button>
+                </div>
             </div>
 
             <button type="submit">Reset Password</button>

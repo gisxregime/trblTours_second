@@ -1,31 +1,34 @@
 <?php
 
-use function Pest\Laravel\assertAuthenticated;
-use function Pest\Laravel\assertDatabaseHas;
+use App\Services\GmailMailService;
+use Illuminate\Support\Facades\DB;
+
 use function Pest\Laravel\get;
 use function Pest\Laravel\post;
 
-test('registration screen can be rendered', function () {
-    $response = get('/register');
+beforeEach(function (): void {
+    $otpMailer = Mockery::mock(GmailMailService::class);
+    $otpMailer->shouldReceive('sendOTP')->andReturn(true);
 
-    $response->assertStatus(200);
+    app()->instance(GmailMailService::class, $otpMailer);
 });
 
-test('new users can register', function () {
+it('renders the email first signup step from the register entry point', function () {
+    get('/register')
+        ->assertSuccessful()
+        ->assertSee('Step 1 of 4: Enter your email.');
+});
+
+it('stores a signup draft and sends otp from the register entry point', function () {
     $response = post('/register', [
-        'name' => 'Test User',
         'email' => 'test@example.com',
-        'password' => 'password',
-        'password_confirmation' => 'password',
     ]);
 
-    assertAuthenticated();
-    assertDatabaseHas('users', [
-        'email' => 'test@example.com',
-        'name' => 'Test User',
-        'full_name' => 'Test User',
-        'role' => 'tourist',
-        'status' => 'active',
-    ]);
-    $response->assertRedirect(route('dashboard.tourist', absolute: false));
+    $draft = DB::table('signup_drafts')->where('email', 'test@example.com')->first();
+
+    expect($draft)->not->toBeNull();
+    expect($draft->otp_code)->not->toBeNull();
+    expect($draft->otp_expires_at)->not->toBeNull();
+
+    $response->assertRedirect(route('signup.otp', ['token' => $draft->token], absolute: false));
 });

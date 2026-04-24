@@ -274,11 +274,17 @@
                     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <div>
                             <label for="password" class="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-[#5c4a3a]">Password <span class="text-[#9a4f1d]">*</span></label>
-                            <input id="password" name="password" type="password" required class="w-full rounded-lg border border-[#d8c9b5] bg-[#f4efe6] px-3 py-2.5 text-sm text-[#2f241a] outline-none transition focus:border-[#9a5f2a] focus:ring-0">
+                            <div class="relative">
+                                <input id="password" name="password" type="password" required class="w-full rounded-lg border border-[#d8c9b5] bg-[#f4efe6] px-3 py-2.5 pr-10 text-sm text-[#2f241a] outline-none transition focus:border-[#9a5f2a] focus:ring-0" data-password-toggle-input="password">
+                                <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[#6f5d52] hover:text-[#8b4513]" data-password-toggle="password">Show</button>
+                            </div>
                         </div>
                         <div>
                             <label for="password_confirmation" class="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-[#5c4a3a]">Confirm Password <span class="text-[#9a4f1d]">*</span></label>
-                            <input id="password_confirmation" name="password_confirmation" type="password" required class="w-full rounded-lg border border-[#d8c9b5] bg-[#f4efe6] px-3 py-2.5 text-sm text-[#2f241a] outline-none transition focus:border-[#9a5f2a] focus:ring-0">
+                            <div class="relative">
+                                <input id="password_confirmation" name="password_confirmation" type="password" required class="w-full rounded-lg border border-[#d8c9b5] bg-[#f4efe6] px-3 py-2.5 pr-10 text-sm text-[#2f241a] outline-none transition focus:border-[#9a5f2a] focus:ring-0" data-password-toggle-input="password_confirmation">
+                                <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[#6f5d52] hover:text-[#8b4513]" data-password-toggle="password_confirmation">Show</button>
+                            </div>
                         </div>
                     </div>
 

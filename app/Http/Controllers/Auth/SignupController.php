@@ -29,7 +29,7 @@ class SignupController extends Controller
     public function storeEmail(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'email' => ['required', 'email', 'max:255', 'unique:'.User::class.',email'],
+            'email' => ['required', 'email', 'max:255'],
         ]);
 
         $token = (string) Str::uuid();
@@ -218,6 +218,11 @@ class SignupController extends Controller
             : [];
 
         $validated = $request->validate(array_merge($commonRules, $roleRules));
+
+        $existingUser = User::where('email', $draft->email)->where('role', $role)->first();
+        if ($existingUser !== null) {
+            return back()->withErrors(['email' => "You already have an account as a {$role} with this email."]);
+        }
 
         DB::transaction(function () use ($draft, $role, $validated): void {
             $status = $role === 'tour_guide' ? 'pending' : 'active';

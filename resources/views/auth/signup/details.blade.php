@@ -64,13 +64,19 @@
 
                         <div>
                             <label for="password" class="mb-2 block text-sm font-semibold text-[#7a5532]">Password</label>
-                            <input id="password" name="password" type="password" required class="w-full rounded-2xl border border-[#d4a563]/45 px-4 py-3 text-[#5b3a26] shadow-sm outline-none focus:border-[#c69958] focus:ring-2 focus:ring-[#d4a563]/30">
+                            <div class="relative">
+                                <input id="password" name="password" type="password" required class="w-full rounded-2xl border border-[#d4a563]/45 px-4 py-3 pr-10 text-[#5b3a26] shadow-sm outline-none focus:border-[#c69958] focus:ring-2 focus:ring-[#d4a563]/30" data-password-toggle-input="password">
+                                <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[#7a5532] hover:text-[#9a6f44]" data-password-toggle="password">Show</button>
+                            </div>
                             @error('password')<p class="mt-2 text-sm text-red-600">{{ $message }}</p>@enderror
                         </div>
 
                         <div>
                             <label for="password_confirmation" class="mb-2 block text-sm font-semibold text-[#7a5532]">Confirm password</label>
-                            <input id="password_confirmation" name="password_confirmation" type="password" required class="w-full rounded-2xl border border-[#d4a563]/45 px-4 py-3 text-[#5b3a26] shadow-sm outline-none focus:border-[#c69958] focus:ring-2 focus:ring-[#d4a563]/30">
+                            <div class="relative">
+                                <input id="password_confirmation" name="password_confirmation" type="password" required class="w-full rounded-2xl border border-[#d4a563]/45 px-4 py-3 pr-10 text-[#5b3a26] shadow-sm outline-none focus:border-[#c69958] focus:ring-2 focus:ring-[#d4a563]/30" data-password-toggle-input="password_confirmation">
+                                <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[#7a5532] hover:text-[#9a6f44]" data-password-toggle="password_confirmation">Show</button>
+                            </div>
                         </div>
                     </div>
 

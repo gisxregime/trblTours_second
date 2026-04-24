@@ -77,13 +77,18 @@
 
                         <div class="mt-4">
                             <label for="delete_password" class="text-sm font-medium text-[#7a5532]">Password Confirmation</label>
-                            <input
-                                id="delete_password"
-                                name="password"
-                                type="password"
-                                class="mt-2 block w-full rounded-lg border border-[#d4a563]/45 px-3 py-2 text-sm text-[#5b3a26] focus:border-[#c69958] focus:ring-[#c69958]"
-                                required
-                            >
+                            <div style="position: relative;">
+                                <input
+                                    id="delete_password"
+                                    name="password"
+                                    type="password"
+                                    style="padding-right: 40px;"
+                                    class="mt-2 block w-full rounded-lg border border-[#d4a563]/45 px-3 py-2 text-sm text-[#5b3a26] focus:border-[#c69958] focus:ring-[#c69958]"
+                                    required
+                                    data-password-toggle-input="delete_password"
+                                >
+                                <button type="button" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); border: 0; background: transparent; cursor: pointer; font-size: 12px; font-weight: 700; color: #5b3a26;" data-password-toggle="delete_password">Show</button>
+                            </div>
                             <x-input-error :messages="$errors->guideDeletion->get('password')" class="mt-2" />
                         </div>
 
